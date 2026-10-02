@@ -11,11 +11,12 @@ The purpose is not to decide every feature immediately. It is to make the design
 
 When multiple designs are reasonable, prefer the design that:
 
-1. keeps the Bitlang VM Assembly bootstrap compiler smaller and easier to understand;
-2. keeps runtime requirements explicit and small;
-3. produces reasonably direct low-level code without sophisticated optimization;
-4. gives source programs more predictable behavior than C where that can be achieved cheaply;
-5. remains expressive enough to write the Siml compiler and operating-system code.
+1. preserves the mandatory requirement that the minimum Siml compiler remain simpler than a comparable minimum C compiler for freestanding / OS work;
+2. keeps the Bitlang VM Assembly bootstrap compiler smaller and easier to understand;
+3. keeps runtime requirements explicit and small;
+4. produces reasonably direct low-level code without sophisticated optimization;
+5. gives source programs more predictable behavior than C where that can be achieved cheaply;
+6. remains expressive enough to write the Siml compiler and operating-system code.
 
 Syntax convenience is secondary to these constraints.
 
