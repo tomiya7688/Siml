@@ -15,7 +15,15 @@ Siml aims to preserve that strength while giving the language more explicit and 
 
 ## 2. What "simple" means
 
-"Simple" primarily refers to **compiler implementation complexity**, not merely short syntax.
+"Simple" applies to the language specification, compiler implementation, and required runtime.
+
+A mandatory project constraint is:
+
+> A minimal, usable Siml compiler must be simpler to implement than a minimal, usable C compiler for comparable freestanding / operating-system work.
+
+The comparison target is not GCC or Clang. It is a small C compiler capable of compiling practical low-level and operating-system code. Siml fails its primary design goal if its minimum correct compiler requires more semantic machinery, more special cases, or substantially more implementation complexity than such a C compiler.
+
+"Simple" therefore does not merely mean short syntax.
 
 The central design constraint is:
 
@@ -187,6 +195,8 @@ For Siml, making the compiler substantially more complex merely to make compilat
 ## 10. Feature admission questions
 
 Before a feature becomes part of the core language, its design should answer:
+
+0. Does the feature preserve the requirement that a minimal Siml compiler remains simpler than a comparable minimal C compiler?
 
 1. Can the feature be implemented in the Bitlang VM Assembly bootstrap compiler without exceeding the complexity budget?
 2. Can its semantics be explained without relying on sophisticated compiler analysis?
