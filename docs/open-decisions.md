@@ -59,21 +59,23 @@ The type set should not require complicated promotion rules.
 
 ## 3. Integer semantics
 
-Every integer operation needs deterministic rules.
+The initial integer semantics are defined in [Integer semantics](integer-semantics.md).
 
-Decide:
+Current decisions include:
 
-- overflow behavior;
-- signed and unsigned division;
-- division by zero;
-- modulo behavior;
-- left and right shift behavior;
-- invalid shift counts;
-- comparison semantics;
-- whether arithmetic operands must have exactly matching types;
-- which conversions are implicit, if any.
+- no implicit casts between typed integer values;
+- contextual typing for integer literals, with `i32` as the default when no type is required;
+- wrapping `+`, `-`, and `*`;
+- division and remainder with explicit trap cases;
+- defined signed and unsigned right-shift behavior;
+- invalid dynamic shift counts trap;
+- comparisons require matching types and return `bool`.
 
-A major goal is to avoid C-style promotion and conversion complexity unless it provides clear value.
+Still open:
+
+- exact explicit-cast syntax and conversion semantics;
+- whether contextual integer literals remain cheap enough in the Bitlang VM Assembly bootstrap compiler;
+- whether dynamic invalid-shift trapping remains within the desired implementation/runtime complexity budget.
 
 ## 4. Pointer and memory model
 
