@@ -11,7 +11,7 @@ The purpose is not to decide every feature immediately. It is to make the design
 
 When multiple designs are reasonable, prefer the design that:
 
-1. keeps the Assam Core bootstrap compiler smaller and easier to understand;
+1. keeps the Bitlang VM Assembly bootstrap compiler smaller and easier to understand;
 2. keeps runtime requirements explicit and small;
 3. produces reasonably direct low-level code without sophisticated optimization;
 4. gives source programs more predictable behavior than C where that can be achieved cheaply;
@@ -23,7 +23,7 @@ Syntax convenience is secondary to these constraints.
 
 # P0: Decisions required for the first compiler
 
-These decisions define the minimum language that the Go/Rust and Assam Core compilers must share.
+These decisions define the minimum language that the Go/Rust and Bitlang VM Assembly bootstrap compilers must share.
 
 ## 1. Compilation model
 
@@ -31,13 +31,13 @@ Decide:
 
 - What is the smallest independently compilable unit?
 - Does one invocation compile exactly one source file or one module?
-- Is Assam Core the required MVP output format?
+- Is Bitlang VM Assembly the required MVP output format?
 - Are symbols emitted in a form suitable for later linking?
 - How are constants and static data represented in the output?
 
 Current direction:
 
-- Assam Core is the canonical MVP lowering target.
+- Bitlang VM Assembly is the canonical MVP lowering target. Its strict low-level profile is based on Assam Core.
 - Direct native-code backends may exist later but must not be required to define the language.
 
 ## 2. Primitive types
@@ -249,7 +249,7 @@ Decide:
 - symbol naming;
 - relocation representation;
 - how static data is referenced;
-- how Assam output from multiple units is combined;
+- how Bitlang VM Assembly output from multiple units is combined;
 - whether a linker is considered part of Siml or an external tool.
 
 ## 15. ABI boundary
@@ -290,7 +290,7 @@ OS code needs explicit access to machine facilities.
 Decide how Siml represents:
 
 - inline or external assembly;
-- raw Assam blocks, if any;
+- raw Bitlang VM Assembly / Assam Core blocks, if any;
 - special registers;
 - interrupts;
 - memory barriers;
@@ -324,11 +324,11 @@ Each of these must pass the feature-admission questions in the design principles
 
 # Compiler complexity budget
 
-The MVP requires a numerical or otherwise testable complexity budget for the Assam Core compiler.
+The MVP requires a numerical or otherwise testable complexity budget for the Bitlang VM Assembly bootstrap compiler.
 
 The exact limits are not yet decided, but the project should track at least:
 
-- Assam Core source/instruction count;
+- Bitlang VM Assembly source/instruction count;
 - number of compiler passes;
 - number of compiler functions/routines;
 - number and kind of internal data structures;
@@ -353,7 +353,7 @@ A future MVP gate could require all of the following:
 - no mandatory SSA;
 - no garbage collector;
 - bounded and documented helper runtime;
-- direct or very small-IR lowering to Assam Core.
+- direct or very small-IR lowering to Bitlang VM Assembly.
 
 The numerical limits should be chosen only after the first Go/Rust implementation provides enough information to estimate what is realistic.
 
@@ -393,7 +393,7 @@ The next design work should proceed roughly in this order:
 6. functions and the minimum calling model;
 7. failure/trap/undefined-behavior policy;
 8. concrete grammar;
-9. Assam Core lowering rules;
+9. Bitlang VM Assembly lowering rules;
 10. module and separate-compilation model;
 11. runtime/ABI boundary;
 12. complexity-budget numbers;
