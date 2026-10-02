@@ -18,6 +18,7 @@ The initial implementation plan is:
 See:
 
 - [Design principles](docs/design-principles.md)
+- [Integer semantics](docs/integer-semantics.md)
 - [Open design decisions](docs/open-decisions.md)
 
 Status: early design.
