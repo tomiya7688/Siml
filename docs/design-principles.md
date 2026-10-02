@@ -19,7 +19,7 @@ Siml aims to preserve that strength while giving the language more explicit and 
 
 The central design constraint is:
 
-> A usable Siml compiler must be implementable directly in Assam Core without requiring a complex compiler framework or a complex language runtime.
+> A usable Siml compiler must be implementable directly in Bitlang VM Assembly, using its Assam Core-compatible low-level profile, without requiring a complex compiler framework or a complex language runtime.
 
 A minimum compiler should be possible with a straightforward pipeline such as:
 
@@ -29,7 +29,7 @@ source
   -> parser
   -> name/type checking
   -> small lowering step
-  -> Assam Core emission
+  -> Bitlang VM Assembly emission
 ```
 
 A sophisticated implementation may use better algorithms and optimizations, but those must not become necessary to implement the language correctly.
@@ -56,13 +56,13 @@ The first compiler is written in a conventional implementation language, initial
 
 Its purpose is to develop and validate the language quickly.
 
-### Assam Core bootstrap compiler
+### Bitlang VM Assembly bootstrap compiler
 
-A minimum Siml compiler is written in Assam Core.
+A minimum Siml compiler is written in Bitlang VM Assembly, using the strict low-level profile derived from Assam Core.
 
-This implementation is not only a port. It is a design test.
+This implementation has two purposes. First, it is a design test: if implementing a language feature at this level requires excessive compiler machinery, runtime machinery, or special cases, that is evidence that the feature may be too complex for Siml.
 
-If implementing a language feature in Assam Core requires excessive compiler machinery, runtime machinery, or special cases, that is evidence that the feature may be too complex for Siml.
+Second, it is a reference implementation for developers bringing Siml to a new architecture, VM, operating system, or experimental environment. A developer should be able to study the low-level compiler and reproduce the required behavior without first understanding a large compiler framework.
 
 ### Self-hosted compiler
 
@@ -81,7 +81,8 @@ Siml programs
       +----------------------+
       |                      |
       v                      v
-Assam Core simlc        Siml simlc
+Bitlang VM Assembly     Siml simlc
+bootstrap simlc
                               |
                               v
                         self-hosting
@@ -92,20 +93,20 @@ Assam Core simlc        Siml simlc
 The MVP is considered complete when all of the following are true:
 
 1. A working reference compiler exists in Go or Rust.
-2. A usable compiler exists in Assam Core.
-3. The Assam Core compiler stays within an explicitly defined complexity budget.
+2. A usable compiler exists in Bitlang VM Assembly.
+3. The Bitlang VM Assembly bootstrap compiler stays within an explicitly defined complexity budget.
 4. A compiler can be written in Siml itself.
 5. The Siml compiler can compile the Siml compiler.
 
 The exact numerical complexity budget is still an open design decision.
 
-## 5. Assam Core is the bootstrap complexity boundary
+## 5. Bitlang VM Assembly is the bootstrap compatibility boundary
 
-For the MVP, Assam Core is the canonical low-level target and the reference environment for measuring compiler simplicity.
+For the MVP, Bitlang VM Assembly is the canonical low-level compatibility target and the reference environment for measuring compiler simplicity. Its strict low-level profile is based on Assam Core, which owns the shared assembly syntax, Core instruction definitions, and reference semantics.
 
-Siml language features should normally lower to small, explicit Assam Core operations or short deterministic sequences.
+Siml language features should normally lower to small, explicit Bitlang VM Assembly operations or short deterministic sequences.
 
-A feature should be reconsidered if its correct implementation requires the Assam compiler to reconstruct complicated high-level concepts, run expensive global analyses, or rely on a substantial hidden runtime.
+A feature should be reconsidered if its correct implementation requires the low-level bootstrap compiler to reconstruct complicated high-level concepts, run expensive global analyses, or rely on a substantial hidden runtime.
 
 This does not require every source construct to map one-to-one to one instruction. It requires the lowering process itself to remain understandable and mechanically implementable.
 
@@ -187,7 +188,7 @@ For Siml, making the compiler substantially more complex merely to make compilat
 
 Before a feature becomes part of the core language, its design should answer:
 
-1. Can the feature be implemented in the Assam Core bootstrap compiler without exceeding the complexity budget?
+1. Can the feature be implemented in the Bitlang VM Assembly bootstrap compiler without exceeding the complexity budget?
 2. Can its semantics be explained without relying on sophisticated compiler analysis?
 3. Does it lower to explicit low-level behavior?
 4. Does it introduce hidden runtime work?
