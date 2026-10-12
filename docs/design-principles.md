@@ -1,7 +1,7 @@
 # Siml Design Principles
 
 Status: Draft  
-Last updated: 2026-10-02
+Last updated: 2026-10-12
 
 ## 1. Purpose
 
@@ -12,6 +12,14 @@ Siml is a systems programming language intended for environments where the compi
 The project is motivated by one of C's most important practical strengths: C can be used very early in the life of a system because a usable compiler can be relatively small.
 
 Siml aims to preserve that strength while giving the language more explicit and predictable semantics than C where doing so does not significantly increase compiler or runtime complexity.
+
+### Operating-system scope
+
+Siml is intended to be sufficient for implementing an operating system end to end, from the lowest machine-facing code through kernel subsystems and drivers to ordinary higher-level userspace software.
+
+This does not mean every facility must be built into the language. Libraries may provide higher-level data structures and services. The language itself must, however, provide enough low-level control and enough ordinary programming capability that another systems language is not required merely to complete the operating system.
+
+This operating-system scope is a design test. A feature is justified by concrete needs in OS implementation or self-hosting, not merely because it is convenient or common in other modern languages.
 
 ## 2. What "simple" means
 
@@ -154,6 +162,24 @@ Performance that only becomes acceptable after sophisticated optimization is a w
 
 Optimizations may be added later, but they are not part of the semantic foundation of the language.
 
+### Optimization is optional
+
+A compiler that correctly implements Siml without optimization is a complete Siml compiler.
+
+Optimization must not be required for:
+
+- language correctness;
+- acceptable basic execution on a supported target;
+- compiling the operating system;
+- self-hosting;
+- conformance with the core language.
+
+Optimizers are optional components. Different implementations may provide none, one, or several optimization strategies, and users may choose among them when an implementation supports that choice.
+
+An optimizer must not change the meaning of the language, and the core language must not depend on one particular optimizer architecture or intermediate representation.
+
+Optimization work should therefore be separable from the minimum compiler as much as practical. Making optimization better is an implementation-quality improvement, not a requirement to make Siml exist on a new architecture.
+
 ## 8. Compilation performance
 
 Fast compilation is desirable, but it is mainly expected as a consequence of a small compiler and simple language rules.
@@ -205,8 +231,9 @@ Before a feature becomes part of the core language, its design should answer:
 5. Can a minimally optimizing compiler generate reasonably efficient code for it?
 6. Can the self-hosted Siml compiler express the implementation clearly?
 7. Is the behavior deterministic enough to avoid C-style accidental complexity where a simple rule is possible?
+8. Is there a demonstrated need for the feature in OS implementation, self-hosting, or another core Siml goal?
 
-A feature does not need to make every answer trivial, but these questions define the default pressure of the language design.
+A feature does not need to make every answer trivial, but these questions define the default pressure of the language design. Features that add significant specification, compiler, or runtime complexity are rejected by default unless their necessity is demonstrated by concrete Siml use cases.
 
 ## 11. Non-goals for the MVP
 
@@ -219,4 +246,4 @@ The MVP is not intended to provide:
 - sophisticated compile-time metaprogramming;
 - abstractions whose implementation depends on substantial hidden machinery.
 
-These may be explored later only when they preserve the core bootstrap goal.
+These are not presumed future additions. Features such as generics, traits/interfaces, macros, compile-time metaprogramming, or other high-level mechanisms should remain outside the core language unless concrete OS or self-hosting work demonstrates that the added complexity is justified and the feature still satisfies the Siml simplicity constraints.
