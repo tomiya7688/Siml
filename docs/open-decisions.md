@@ -98,7 +98,8 @@ Decide:
 - load/store widths;
 - aliasing rules;
 - representation of addresses;
-- casts between integers and pointers;
+- casts between integers and pointers, including conversions that change
+  pointee mutability;
 - support for memory-mapped I/O;
 - whether a `volatile`-like concept is required.
 

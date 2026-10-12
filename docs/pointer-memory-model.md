@@ -26,8 +26,8 @@ section records choices that still need agreement.
 - `usize` can represent an address, but converting between integers and
   pointers requires an explicit conversion.
 - A null pointer value is available for every pointer type. Converting null
-  between pointer types is allowed; other pointer conversions are explicit,
-  except that a direct conversion cannot remove the read-only qualifier.
+  between pointer types is allowed. A direct pointer conversion may preserve
+  or weaken access, but may not remove the read-only qualifier.
 - Pointer equality and inequality are available for pointers with the same
   base pointee type, regardless of access qualifier. Relational pointer
   comparisons are not part of the MVP.
@@ -181,7 +181,10 @@ encoding are discussed in the following proposals and remain unaccepted.
 ## Narrow decision proposal: pointer conversions
 
 **Recommendation:** permit explicit conversions between a data pointer and
-`usize`, plus explicit conversions between pointer types. Do not convert other
+`usize`, plus explicit conversions between pointer types. A direct conversion
+between pointer types may change the base pointee type, but cannot strengthen
+access: `*T` may convert to `*const U`, while `*const T` cannot convert directly
+to `*U`. Allow an implicit `*T` to `*const T` conversion. Do not convert other
 integer types directly to pointers; convert them to `usize` first using the
 integer conversion rules.
 
@@ -189,8 +192,10 @@ Under the flat-address proposal, these conversions preserve the pointer-width
 address bits. Converting a `usize` to a pointer does not check whether that
 address is mapped or valid for dereference. Such a pointer may only be
 dereferenced when it meets the storage, type, and alignment preconditions.
-Converting between pointer types changes the pointee type without checking the
-address or changing its bits.
+Converting between pointer types does not check the address or change its
+bits. Converting `*const T` to `usize` and then explicitly converting that
+integer to `*U` produces writable access; this is allowed by the proposed
+integer-cast rule and does not validate the address or make it safe to access.
 
 Pointer/integer conversions use the target's null representation described in
 the following proposal.
@@ -307,9 +312,9 @@ does not settle array type syntax, zero-length arrays, or the trap mechanism.
 The most consequential baseline choices to accept or revise are:
 
 - typed pointers with target pointer width;
-- pointer syntax using `*T`, `*const T`, `&place`, and `*pointer`; `*T` grants
-  writable access, `*const T` grants read-only access, and conversion only
-  weakens access;
+- pointer syntax using `*T`, `*const T`, `&place`, and `*pointer`; direct
+  pointer conversions only preserve or weaken access, while an explicit
+  integer round trip can produce a writable pointer;
 - flat data pointer representation with no hidden metadata;
 - explicit pointer/integer conversions;
 - pointer conversions preserve address bits, using a target-reserved null
