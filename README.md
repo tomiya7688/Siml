@@ -4,6 +4,8 @@
 
 The project does **not** primarily aim to beat C in runtime performance or to minimize large-project build times. Its primary design constraint is that a bootstrap compiler must remain simple enough to implement in [Bitlang VM Assembly](https://github.com/tomiya7688/Bitlang-VM), whose low-level profile is based on [Assam Core](https://github.com/tomiya7688/Assam).
 
+Siml aims to be sufficient for implementing an operating system end to end, from low-level machine-facing code to higher-level userspace software, without requiring another systems language. A correct non-optimizing compiler is a complete Siml compiler; optimization is optional and should remain separable from the minimum implementation.
+
 ## MVP direction
 
 The initial implementation plan is:
