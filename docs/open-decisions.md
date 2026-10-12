@@ -1,7 +1,7 @@
 # Open Design Decisions
 
 Status: Draft  
-Last updated: 2026-10-02
+Last updated: 2026-10-12
 
 This document lists the decisions that must be made while designing Siml.
 
@@ -305,9 +305,9 @@ These should not contaminate the portable core more than necessary.
 
 ---
 
-# P2: Decisions that can wait until the bootstrap core works
+# P2: Features excluded by default
 
-Potential later features include:
+The following are **not planned features merely waiting for implementation**. They are excluded from the core language by default because they can easily increase language, compiler, or runtime complexity:
 
 - richer enums/tagged unions;
 - slices;
@@ -316,12 +316,16 @@ Potential later features include:
 - interfaces/traits;
 - compile-time evaluation;
 - macros;
-- richer standard-library abstractions;
-- optional safety checks;
+- richer language-level abstractions;
+- optional safety systems that require global program analysis;
 - convenience iteration syntax;
-- advanced optimization annotations.
+- optimization-specific language annotations.
 
-Each of these must pass the feature-admission questions in the design principles before becoming part of the core language.
+Any of these may be reconsidered only when concrete operating-system or self-hosting work demonstrates a real need that cannot be met cleanly with the existing language or libraries.
+
+Reconsideration must still pass the feature-admission questions in the design principles, including the requirement that the minimum Siml compiler remain simpler than a comparable minimum C compiler.
+
+Library features do not require promotion into the language. Data structures, strings, containers, allocators, and other higher-level facilities should remain library concerns whenever they can be implemented without special compiler support.
 
 ---
 
@@ -353,6 +357,8 @@ A future MVP gate could require all of the following:
 - straightforward symbol table;
 - local and deterministic type checking;
 - no mandatory optimizer;
+- an unoptimized correct compiler is a complete conforming compiler;
+- optimization can be omitted or provided as a separable implementation feature;
 - no mandatory SSA;
 - no garbage collector;
 - bounded and documented helper runtime;
@@ -401,5 +407,7 @@ The next design work should proceed roughly in this order:
 11. runtime/ABI boundary;
 12. complexity-budget numbers;
 13. self-hosted compiler design.
+
+Optimization design is intentionally not on the critical path. It should be considered after the non-optimizing compiler, operating-system use cases, and self-hosting path are established.
 
 This order tries to make the first executable compiler possible before solving large-project ergonomics.
