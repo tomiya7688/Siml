@@ -81,6 +81,11 @@ Still open:
 
 This is central for OS development.
 
+An initial baseline proposal is recorded in [Pointer and memory model](pointer-memory-model.md).
+It is a proposal for review, not an accepted language decision.
+That document includes a proposed `*T`, `&place`, and `*pointer` syntax; the
+read-only versus writable pointee rule remains open.
+
 Decide:
 
 - pointer syntax and pointer types;
@@ -167,6 +172,8 @@ Decide the minimum aggregate types.
 Likely areas:
 
 - fixed-size arrays;
+- a proposed fixed-array-only indexing rule is recorded in [Pointer and memory model](pointer-memory-model.md);
+  it remains undecided;
 - structs/records;
 - field layout;
 - padding and alignment;
@@ -403,3 +410,4 @@ The next design work should proceed roughly in this order:
 13. self-hosted compiler design.
 
 This order tries to make the first executable compiler possible before solving large-project ergonomics.
+
