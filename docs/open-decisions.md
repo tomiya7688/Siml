@@ -83,8 +83,9 @@ This is central for OS development.
 
 An initial baseline proposal is recorded in [Pointer and memory model](pointer-memory-model.md).
 It is a proposal for review, not an accepted language decision.
-That document includes a proposed `*T`, `&place`, and `*pointer` syntax; the
-read-only versus writable pointee rule remains open.
+That document proposes `*T` for writable pointee access and `*const T` for
+read-only pointee access, separately from whether the pointer variable can be
+reassigned. These rules remain unaccepted proposals.
 
 Decide:
 
@@ -410,4 +411,3 @@ The next design work should proceed roughly in this order:
 13. self-hosted compiler design.
 
 This order tries to make the first executable compiler possible before solving large-project ergonomics.
-

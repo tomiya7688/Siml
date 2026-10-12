@@ -58,8 +58,9 @@ section records choices that still need agreement.
 These choices affect code generation or safety enough that the proposal does
 not settle them:
 
-1. **Pointer syntax and mutability:** whether to adopt the `*T`, `&place`, and
-   `*pointer` spellings below, and how read-only access is represented.
+1. **Pointer syntax and mutability:** whether to adopt the `*T`, `*const T`,
+   `&place`, and `*pointer` spellings below, and the proposed conversion and
+   place-mutability rules.
 2. **Alignment:** the exact alignment of each type and the failure behavior of
    a misaligned access.
 3. **Address representation:** whether the MVP's flat-address restriction is
@@ -115,6 +116,28 @@ concrete grammar.
 This proposal does not decide whether a pointer grants read-only or writable
 access to its pointee. That must be coordinated with the separate variable and
 mutability rules. No `const` or `mut` pointer qualifier is proposed here.
+
+## Narrow decision proposal: pointee mutability
+
+**Recommendation:** use `*T` for writable access to a `T` pointee and `*const T`
+for read-only access. The qualifier describes access through the pointer; it
+does not decide whether the variable holding the pointer can be reassigned.
+That remains governed by the ordinary variable mutability rules.
+
+Dereferencing `*T` produces a readable and writable place, subject to the
+ordinary place-mutability rules. Dereferencing `*const T` produces a readable,
+non-writable place. Taking the address of a writable place with `&place`
+produces `*T`; taking the address of a read-only place produces `*const T`.
+Converting `*T` to `*const T` is implicit and preserves the address. The
+reverse conversion requires an explicit pointer/integer round trip only if the
+separate cast proposal permits it; this proposal does not add a direct cast
+that removes the read-only restriction.
+
+The qualifier does not change pointer width or representation. Pointer
+equality may compare pointers to the same base type regardless of this
+qualifier. This is a static access restriction, not hardware protection: it
+does not prevent another writable pointer from changing the same storage.
+These rules are a proposal and depend on accepted variable and cast rules.
 
 ## Narrow decision proposal: typed access alignment
 
@@ -277,8 +300,9 @@ does not settle array type syntax, zero-length arrays, or the trap mechanism.
 The most consequential baseline choices to accept or revise are:
 
 - typed pointers with target pointer width;
-- pointer syntax using `*T`, `&place`, and `*pointer`, with pointee mutability
-  still unresolved;
+- pointer syntax using `*T`, `*const T`, `&place`, and `*pointer`; `*T` grants
+  writable access, `*const T` grants read-only access, and conversion only
+  weakens access;
 - flat data pointer representation with no hidden metadata;
 - explicit pointer/integer conversions;
 - pointer conversions preserve address bits, using a target-reserved null
