@@ -19,20 +19,24 @@ section records choices that still need agreement.
 
 ### Pointer values
 
-- A pointer has one pointee type, written `*T` in this proposal.
+- A pointer has one pointee type and an access qualifier, written `*T` for
+  writable access or `*const T` for read-only access in this proposal.
 - A pointer value is one target address and has the target's pointer width.
 - `usize` has that same width, as specified by the integer model.
 - `usize` can represent an address, but converting between integers and
   pointers requires an explicit conversion.
 - A null pointer value is available for every pointer type. Converting null
-  between pointer types is allowed; other pointer conversions are explicit.
+  between pointer types is allowed; other pointer conversions are explicit,
+  except that a direct conversion cannot remove the read-only qualifier.
 - Pointer equality and inequality are available for pointers with the same
-  pointee type. Relational pointer comparisons are not part of the MVP.
+  base pointee type, regardless of access qualifier. Relational pointer
+  comparisons are not part of the MVP.
 
 ### Addressing and access
 
 - `&place` obtains the address of an addressable variable or field.
-- `*pointer` reads or writes the pointed-to value. Dereferencing null traps.
+- `*pointer` reads or writes according to the pointer's access qualifier.
+  Dereferencing null traps.
 - Pointer arithmetic is not part of the MVP. Indexing can be added as a
   separate construct with explicit array rules.
 - A non-null pointer must designate storage large enough for a value of its
@@ -113,9 +117,10 @@ It does not require a separate member-access arrow or pointer arithmetic
 syntax. The spellings are a proposal; precedence details belong in the later
 concrete grammar.
 
-This proposal does not decide whether a pointer grants read-only or writable
-access to its pointee. That must be coordinated with the separate variable and
-mutability rules. No `const` or `mut` pointer qualifier is proposed here.
+Pointee mutability and variable mutability are proposed separately below.
+The pointer qualifier describes access through the pointer; the ordinary
+variable rules still determine whether the pointer variable itself can be
+reassigned.
 
 ## Narrow decision proposal: pointee mutability
 
