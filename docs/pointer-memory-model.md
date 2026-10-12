@@ -133,10 +133,12 @@ Dereferencing `*T` produces a readable and writable place, subject to the
 ordinary place-mutability rules. Dereferencing `*const T` produces a readable,
 non-writable place. Taking the address of a writable place with `&place`
 produces `*T`; taking the address of a read-only place produces `*const T`.
-Converting `*T` to `*const T` is implicit and preserves the address. The
-reverse conversion requires an explicit pointer/integer round trip only if the
-separate cast proposal permits it; this proposal does not add a direct cast
-that removes the read-only restriction.
+Converting `*T` to `*const T` is implicit and preserves the address. A direct
+conversion from `*const T` to `*T` is disallowed. The separate pointer/integer
+cast proposal allows explicit conversion through `usize`; under that proposal,
+converting the integer back to `*T` yields writable access. The read-only
+qualifier is therefore a static restriction on that pointer value, not a
+safety boundary.
 
 The qualifier does not change pointer width or representation. Pointer
 equality may compare pointers to the same base type regardless of this
