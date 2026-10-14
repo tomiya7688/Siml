@@ -217,6 +217,10 @@ Important cases include:
 - invalid casts;
 - unreachable states.
 
+The pointer proposal recommends trapping on null dereference before performing
+the memory access; see [Pointer and memory model](pointer-memory-model.md).
+The general trap mechanism and recovery policy remain undecided.
+
 Siml should avoid undefined behavior when a cheap deterministic rule is available, but it must not require expensive runtime checks merely to eliminate every possible undefined operation.
 
 ## 12. Minimum parser strategy

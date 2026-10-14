@@ -57,6 +57,19 @@ section records choices that still need agreement.
   for device registers.
 - Allocation is not required by the language or its runtime.
 
+## Narrow decision proposal: null dereference
+
+**Recommendation:** dereferencing a null pointer must trap before the load or
+store takes place. If the pointer is statically known to be null, reject the
+operation at compile time when that is straightforward; dynamic null values
+must be checked at runtime. The target defines how a trap is reported or
+handled, but execution must not continue as if the access succeeded.
+
+This rule applies only to null. It does not require general checks for whether
+a non-null pointer is mapped, in bounds, or otherwise valid. Those checks would
+need separate decisions and may be too expensive for the MVP. The trap mechanism
+and recovery policy remain part of the broader failure-policy decision.
+
 ## Still unresolved
 
 These choices affect code generation or safety enough that the proposal does
@@ -80,6 +93,8 @@ not settle them:
    always available or must appear inside an explicit unsafe construct.
 8. **Array indexing:** whether to adopt the fixed-array-only rule below, its
    exact syntax, and whether dynamic bounds traps fit the MVP budget.
+9. **Null dereference:** whether to adopt the trap behavior above and how a
+   target reports or handles a trap.
 
 ## Narrow decision proposal: explicit unsafe blocks
 
@@ -319,7 +334,7 @@ The most consequential baseline choices to accept or revise are:
 - explicit pointer/integer conversions;
 - pointer conversions preserve address bits, using a target-reserved null
   value that need not be zero;
-- null pointers, with null dereference trapping;
+- null pointers, with null dereference trapping before memory access;
 - no pointer arithmetic in the MVP;
 - fixed-size array indexing only, with `usize` indices and dynamic bounds
   traps;
