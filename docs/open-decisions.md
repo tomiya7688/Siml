@@ -93,8 +93,9 @@ Decide:
 - address-of and dereference operations;
 - whether pointer arithmetic exists;
 - whether a null pointer value is defined;
-- alignment requirements;
-- behavior of misaligned access;
+- whether target profiles supply an `alignof(T)` value per primitive integer
+  and pointer type, as proposed in [Pointer and memory model](pointer-memory-model.md);
+- behavior of misaligned access and exact alignment values for each target;
 - load/store widths;
 - aliasing rules;
 - representation of addresses;

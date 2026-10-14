@@ -78,8 +78,9 @@ not settle them:
 1. **Pointer syntax and mutability:** whether to adopt the `*T`, `*const T`,
    `&place`, and `*pointer` spellings below, and the proposed conversion and
    place-mutability rules.
-2. **Alignment:** the exact alignment of each type and the failure behavior of
-   a misaligned access.
+2. **Alignment:** whether to adopt the target-profile alignment table below,
+   its values for each primitive type, and the failure behavior of a misaligned
+   access.
 3. **Address representation:** whether the MVP's flat-address restriction is
    acceptable for all initial targets, or whether segmented or capability
    pointers must be supported from the start.
@@ -163,17 +164,20 @@ These rules are a proposal and depend on accepted variable and cast rules.
 
 ## Narrow decision proposal: typed access alignment
 
-**Recommendation:** require a pointer used to access a value of type `T` to be
-aligned to `alignof(T)`. Each target supplies alignment values for primitive
-types; aggregate alignment follows the separate aggregate-layout decision.
-Taking the address of a valid `T` place always produces a suitably aligned
-pointer. The compiler does not insert a dynamic alignment check.
+**Recommendation:** require each target profile to give an `alignof(T)` value
+for every primitive integer and data pointer type. Do not derive alignment
+from a type's size or bit width; the target table is authoritative. Aggregate
+and `bool` alignment remain with their separate type and layout decisions.
+`alignof(T)` is a compile-time property. A pointer used to access a `T` value
+must satisfy that alignment, and taking the address of a valid `T` place
+produces a suitably aligned pointer. The compiler does not insert a dynamic
+alignment check.
 
 This keeps ordinary access as a direct load/store and gives the compiler a
 simple precondition. An access whose alignment cannot be established from the
-program is invalid; whether it must trap or has another defined failure result
-belongs to the still-open failure policy. This proposal does not promise that
-every target traps on a misaligned access.
+program violates that precondition; whether it must trap or has another defined
+failure result belongs to the still-open failure policy. This proposal does
+not promise that every target traps on a misaligned access.
 
 This recommendation is not final. In particular, byte-oriented access to
 packed data or devices would need a separate explicit operation or rule.
@@ -342,7 +346,9 @@ The most consequential baseline choices to accept or revise are:
 - no type-based strict-aliasing assumption;
 - integer and pointer scalar storage is byte-addressable in 8-bit units, with
   target-specified byte order;
-- typed access alignment as a precondition, with no mandatory dynamic check;
+- target-profile `alignof(T)` values for primitive integer and data pointer
+  types, with access alignment as a precondition and no mandatory dynamic
+  check;
 - defer exact alignment values, `bool` and aggregate representations, and
   the final volatile access and target-fence contracts to explicit follow-up
   decisions.
