@@ -98,7 +98,8 @@ Decide:
 - behavior of misaligned access and exact alignment values for each target;
 - load/store widths;
 - aliasing rules;
-- representation of addresses;
+- whether every initial target can expose data pointers through one flat
+  address space, as proposed in [Pointer and memory model](pointer-memory-model.md);
 - casts between integers and pointers, including conversions that change
   pointee mutability;
 - support for memory-mapped I/O;

@@ -81,9 +81,9 @@ not settle them:
 2. **Alignment:** whether to adopt the target-profile alignment table below,
    its values for each primitive type, and the failure behavior of a misaligned
    access.
-3. **Address representation:** whether the MVP's flat-address restriction is
-   acceptable for all initial targets, or whether segmented or capability
-   pointers must be supported from the start.
+3. **Address representation:** whether every initial target can expose its
+   data pointers through the single flat address space proposed below, or
+   whether segmented or capability pointers must be supported from the start.
 4. **Pointer/integer casts:** whether to adopt the proposed conversions below,
    which target value represents null, and whether targets can reserve it.
 5. **Aliasing across types:** whether to adopt the scalar byte-access proposal
@@ -184,15 +184,19 @@ packed data or devices would need a separate explicit operation or rule.
 
 ## Narrow decision proposal: flat data pointers
 
-**Recommendation:** represent every MVP data pointer as one flat target address
-with the target pointer width. This matches the existing integer rule that
-`usize` uses the target pointer width. The compiler does not attach bounds,
+**Recommendation:** represent every MVP data pointer as one scalar address in a
+single flat target data-address space. Every data pointer has the target pointer
+width, matching the existing rule that `usize` uses that width. `usize` can
+represent every usable data address except the target-reserved null pattern.
+The address may name virtual or physical memory according to the target; this
+rule does not require physical addresses. The compiler does not attach bounds,
 ownership, or provenance metadata to a pointer.
 
 This keeps pointer values scalar and supports a small backend representation.
-It excludes segmented pointers and capability pointers from the MVP unless a
-target can expose them through a flat address representation. Such targets
-could be handled by a later extension or a distinct target profile.
+It excludes segmented pointers, separate non-flat data address spaces, and
+capability pointers from the MVP unless the target ABI exposes usable data
+pointers through the required flat integer address representation. Such
+targets could be handled by a later extension or a distinct target profile.
 
 This recommendation fixes representation only. Pointer conversions and null
 encoding are discussed in the following proposals and remain unaccepted.
@@ -334,7 +338,7 @@ The most consequential baseline choices to accept or revise are:
 - pointer syntax using `*T`, `*const T`, `&place`, and `*pointer`; direct
   pointer conversions only preserve or weaken access, while an explicit
   integer round trip can produce a writable pointer;
-- flat data pointer representation with no hidden metadata;
+- one flat data-address space with scalar pointers and no hidden metadata;
 - explicit pointer/integer conversions;
 - pointer conversions preserve address bits, using a target-reserved null
   value that need not be zero;
