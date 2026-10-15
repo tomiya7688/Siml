@@ -204,12 +204,13 @@ encoding are discussed in the following proposals and remain unaccepted.
 ## Narrow decision proposal: pointer conversions
 
 **Recommendation:** permit explicit conversions between a data pointer and
-`usize`, plus explicit conversions between pointer types. A direct conversion
-between pointer types may change the base pointee type, but cannot strengthen
-access: `*T` may convert to `*const U`, while `*const T` cannot convert directly
-to `*U`. Allow an implicit `*T` to `*const T` conversion. Do not convert other
-integer types directly to pointers; convert them to `usize` first using the
-integer conversion rules.
+`usize`, plus explicit conversions between pointer types. Do not convert any
+other integer type directly to a pointer. An integer must first be explicitly
+converted to `usize` under the general integer-cast rules. Pointer-to-`usize`
+and `usize`-to-pointer conversions preserve all pointer-width bits. A direct
+conversion between pointer types may change the base pointee type, but cannot
+strengthen access: `*T` may convert to `*const U`, while `*const T` cannot
+convert directly to `*U`. Allow an implicit `*T` to `*const T` conversion.
 
 Under the flat-address proposal, these conversions preserve the pointer-width
 address bits. Converting a `usize` to a pointer does not check whether that
@@ -234,8 +235,10 @@ that an arbitrary non-null address is valid to access.
 name a usable non-null data address; the language does not require the value to
 be zero.
 
-Pointer-to-`usize` conversion preserves the null pattern, and converting that
-pattern back to any pointer type produces null. This keeps null checks and
+Pointer-to-`usize` conversion preserves all bits, including the reserved null
+pattern, and converting that pattern back to any pointer type produces null.
+Every other `usize` bit pattern converts to a non-null pointer containing those
+address bits, whether or not the address is mapped. This keeps null checks and
 conversions to simple scalar comparisons while letting each target choose an
 unmapped sentinel when available.
 

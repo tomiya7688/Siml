@@ -100,8 +100,9 @@ Decide:
 - aliasing rules;
 - whether every initial target can expose data pointers through one flat
   address space, as proposed in [Pointer and memory model](pointer-memory-model.md);
-- casts between integers and pointers, including conversions that change
-  pointee mutability;
+- casts between integers and pointers, including the proposed `usize` round
+  trip and conversions that change pointee mutability; exact cast syntax and
+  conversion from other integer types remain part of the general cast decision;
 - support for memory-mapped I/O;
 - whether a `volatile`-like concept is required.
 
@@ -197,6 +198,10 @@ Decide exactly which conversions are:
 - forbidden.
 
 A small conversion table is preferable to a large set of contextual promotion rules.
+
+Pointer-specific conversion recommendations are recorded in [Pointer and
+memory model](pointer-memory-model.md); exact cast syntax and integer-to-`usize`
+conversion semantics remain undecided.
 
 ## 11. Failure, trap, and undefined behavior policy
 
