@@ -81,18 +81,29 @@ Still open:
 
 This is central for OS development.
 
+An initial baseline proposal is recorded in [Pointer and memory model](pointer-memory-model.md).
+It is a proposal for review, not an accepted language decision.
+That document proposes `*T` for writable pointee access and `*const T` for
+read-only pointee access, separately from whether the pointer variable can be
+reassigned. These rules remain unaccepted proposals.
+
 Decide:
 
 - pointer syntax and pointer types;
 - address-of and dereference operations;
 - whether pointer arithmetic exists;
 - whether a null pointer value is defined;
-- alignment requirements;
-- behavior of misaligned access;
+- whether target profiles supply an `alignof(T)` value per primitive integer
+  and pointer type, as proposed in [Pointer and memory model](pointer-memory-model.md);
+- behavior of misaligned access and exact alignment values for each target;
 - load/store widths;
-- aliasing rules;
-- representation of addresses;
-- casts between integers and pointers;
+- whether to adopt the scalar byte-level aliasing rules in [Pointer and memory
+  model](pointer-memory-model.md), including the target byte order;
+- whether every initial target can expose data pointers through one flat
+  address space, as proposed in [Pointer and memory model](pointer-memory-model.md);
+- casts between integers and pointers, including the proposed `usize` round
+  trip and conversions that change pointee mutability; exact cast syntax and
+  conversion from other integer types remain part of the general cast decision;
 - support for memory-mapped I/O;
 - whether a `volatile`-like concept is required.
 
@@ -167,6 +178,8 @@ Decide the minimum aggregate types.
 Likely areas:
 
 - fixed-size arrays;
+- a proposed fixed-array-only indexing rule is recorded in [Pointer and memory model](pointer-memory-model.md);
+  it remains undecided;
 - structs/records;
 - field layout;
 - padding and alignment;
@@ -186,6 +199,10 @@ Decide exactly which conversions are:
 - forbidden.
 
 A small conversion table is preferable to a large set of contextual promotion rules.
+
+Pointer-specific conversion recommendations are recorded in [Pointer and
+memory model](pointer-memory-model.md); exact cast syntax and integer-to-`usize`
+conversion semantics remain undecided.
 
 ## 11. Failure, trap, and undefined behavior policy
 
@@ -207,6 +224,10 @@ Important cases include:
 - out-of-bounds array access;
 - invalid casts;
 - unreachable states.
+
+The pointer proposal recommends trapping on null dereference before performing
+the memory access; see [Pointer and memory model](pointer-memory-model.md).
+The general trap mechanism and recovery policy remain undecided.
 
 Siml should avoid undefined behavior when a cheap deterministic rule is available, but it must not require expensive runtime checks merely to eliminate every possible undefined operation.
 
