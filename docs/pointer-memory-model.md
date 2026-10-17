@@ -262,9 +262,13 @@ bits.
 Loads and stores through integer or pointer types access the corresponding
 bytes in memory. Overlapping accesses through different integer or pointer
 types observe the same bytes: a store through one type changes the result of a
-later overlapping load through another type. This makes the existing proposal
-against type-based strict-aliasing assumptions concrete. Accesses still need
-enough storage and the alignment required by the accessed type.
+later overlapping load through another type. A store changes only the bytes
+occupied by its value; it leaves neighboring bytes unchanged. For example, if
+a `u16` containing `0x1234` is stored and the first byte is loaded through a
+`u8` pointer, the result is `0x34` on a little-endian target and `0x12` on a
+big-endian target. This makes the proposal against type-based strict-aliasing
+assumptions concrete. Each access still needs enough storage and the alignment
+required by its accessed type.
 
 The rule covers integer and pointer representations only. It does not define
 the representation or byte access rules for `bool`, structs, unions, or padding;

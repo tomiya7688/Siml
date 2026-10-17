@@ -97,7 +97,8 @@ Decide:
   and pointer type, as proposed in [Pointer and memory model](pointer-memory-model.md);
 - behavior of misaligned access and exact alignment values for each target;
 - load/store widths;
-- aliasing rules;
+- whether to adopt the scalar byte-level aliasing rules in [Pointer and memory
+  model](pointer-memory-model.md), including the target byte order;
 - whether every initial target can expose data pointers through one flat
   address space, as proposed in [Pointer and memory model](pointer-memory-model.md);
 - casts between integers and pointers, including the proposed `usize` round
