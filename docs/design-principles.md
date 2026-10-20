@@ -1,249 +1,260 @@
-# Siml Design Principles
+# Siml 設計原則
 
-Status: Draft  
-Last updated: 2026-10-12
+状態: 草案  
+最終更新: 2026-10-21
 
-## 1. Purpose
+[英語翻訳](en/design-principles.md)
 
-Siml means **Simple Language**.
+## 1. 目的
 
-Siml is a systems programming language intended for environments where the compiler itself must be easy to bring up: new operating systems, new instruction sets, experimental processors, soft cores, and other early-stage platforms.
+Siml は **Simple Language** の略です。
 
-The project is motivated by one of C's most important practical strengths: C can be used very early in the life of a system because a usable compiler can be relatively small.
+Simlは、新しいOS、新しい命令セット、実験的なCPU、ソフトコアなど、コンパイラそのものを簡単に持ち込めることが重要な環境のためのシステムプログラミング言語です。
 
-Siml aims to preserve that strength while giving the language more explicit and predictable semantics than C where doing so does not significantly increase compiler or runtime complexity.
+Cの大きな実用上の強みの一つは、比較的小さなコンパイラでもシステム立ち上げの早い段階から使えることです。
 
-### Operating-system scope
+Simlはその強みを残しつつ、コンパイラや必須の実行時機構を大きく複雑化しない範囲で、Cより明示的で予測しやすい規則を持つことを目指します。
 
-Siml is intended to be sufficient for implementing an operating system end to end, from the lowest machine-facing code through kernel subsystems and drivers to ordinary higher-level userspace software.
+### OS全体を書けること
 
-This does not mean every facility must be built into the language. Libraries may provide higher-level data structures and services. The language itself must, however, provide enough low-level control and enough ordinary programming capability that another systems language is not required merely to complete the operating system.
+Simlは、機械に直接触れる低水準部分から、カーネル、ドライバ、ファイルシステム、プロセス管理、さらに高水準のユーザー空間まで、OS全体をSimlで実装できることを目指します。
 
-This operating-system scope is a design test. A feature is justified by concrete needs in OS implementation or self-hosting, not merely because it is convenient or common in other modern languages.
+これは、すべてを言語組み込み機能にするという意味ではありません。動的配列、文字列、各種データ構造、アロケータなどは、言語だけで実装できるならライブラリ側に置きます。
 
-## 2. What "simple" means
+別のシステム言語を使わなければOSを完成できないなら、Simlの目的を満たしていません。
 
-"Simple" applies to the language specification, compiler implementation, and required runtime.
+機能追加は「他の現代的な言語にあるから」ではなく、OS実装やSiml自身のコンパイラ実装で具体的な必要性が確認されたかどうかで判断します。
 
-A mandatory project constraint is:
+## 2. 「単純」の意味
 
-> A minimal, usable Siml compiler must be simpler to implement than a minimal, usable C compiler for comparable freestanding / operating-system work.
+Simlでいう単純さは、構文の短さだけではありません。
 
-The comparison target is not GCC or Clang. It is a small C compiler capable of compiling practical low-level and operating-system code. Siml fails its primary design goal if its minimum correct compiler requires more semantic machinery, more special cases, or substantially more implementation complexity than such a C compiler.
+少なくとも次の3つを単純に保ちます。
 
-"Simple" therefore does not merely mean short syntax.
+1. 言語仕様
+2. コンパイラ実装
+3. 必須の実行時機構
 
-The central design constraint is:
+必須条件は次です。
 
-> A usable Siml compiler must be implementable directly in Bitlang VM Assembly, using its Assam Core-compatible low-level profile, without requiring a complex compiler framework or a complex language runtime.
+> 実用的な最小Simlコンパイラは、同等のfreestanding / OS用途に使える実用的な最小Cコンパイラより単純でなければならない。
 
-A minimum compiler should be possible with a straightforward pipeline such as:
+比較対象はGCCやClangではありません。小規模でも、実際に低水準コードやOSコードをコンパイルできるCコンパイラです。
 
-```text
-source
-  -> lexer
-  -> parser
-  -> name/type checking
-  -> small lowering step
-  -> Bitlang VM Assembly emission
-```
+最小Simlコンパイラの方が多くの意味規則、特殊例、内部状態、解析処理を必要とするなら、その設計は失敗です。
 
-A sophisticated implementation may use better algorithms and optimizations, but those must not become necessary to implement the language correctly.
+さらに、
 
-In particular, the language should not require the bootstrap compiler to have facilities such as:
+> Simlの実用的なコンパイラは、Bitlang VM Assemblyで、巨大なコンパイラ基盤や複雑な実行時機構なしに実装できなければならない。
 
-- a constraint-solving type inference engine;
-- mandatory SSA construction;
-- mandatory global optimization;
-- a garbage collector;
-- exception unwinding;
-- implicit heap allocation;
-- hidden object lifetime machinery;
-- dynamic dispatch infrastructure;
-- a large mandatory standard runtime.
-
-## 3. Bootstrap is part of the language design
-
-Siml is planned around three compiler implementations.
-
-### Reference compiler
-
-The first compiler is written in a conventional implementation language, initially Go or Rust.
-
-Its purpose is to develop and validate the language quickly.
-
-### Bitlang VM Assembly bootstrap compiler
-
-A minimum Siml compiler is written in Bitlang VM Assembly, using the strict low-level profile derived from Assam Core.
-
-This implementation has two purposes. First, it is a design test: if implementing a language feature at this level requires excessive compiler machinery, runtime machinery, or special cases, that is evidence that the feature may be too complex for Siml.
-
-Second, it is a reference implementation for developers bringing Siml to a new architecture, VM, operating system, or experimental environment. A developer should be able to study the low-level compiler and reproduce the required behavior without first understanding a large compiler framework.
-
-### Self-hosted compiler
-
-A Siml compiler is then written in Siml itself.
-
-This proves that Siml is expressive enough to implement its own toolchain.
-
-The intended bootstrap path is:
+最小コンパイラは、おおむね次のような単純な流れで実装できることを目標にします。
 
 ```text
-Go/Rust simlc
-      |
-      v
-Siml programs
-      |
-      +----------------------+
-      |                      |
-      v                      v
-Bitlang VM Assembly     Siml simlc
-bootstrap simlc
-                              |
-                              v
-                        self-hosting
+ソース
+  -> 字句解析
+  -> 構文解析
+  -> 名前解決と型検査
+  -> 小さな低水準化
+  -> Bitlang VM Assembly出力
 ```
 
-## 4. MVP completion gate
+高機能な実装が高度なアルゴリズムや最適化を使うことは構いません。しかし、それらを使わないと正しいSimlコンパイラを実装できない設計にはしません。
 
-The MVP is considered complete when all of the following are true:
+特に、最小コンパイラに次のものを必須にしません。
 
-1. A working reference compiler exists in Go or Rust.
-2. A usable compiler exists in Bitlang VM Assembly.
-3. The Bitlang VM Assembly bootstrap compiler stays within an explicitly defined complexity budget.
-4. A compiler can be written in Siml itself.
-5. The Siml compiler can compile the Siml compiler.
+- 制約解決型の高度な型推論
+- 必須のSSA構築
+- 必須の全体最適化
+- ガベージコレクション
+- 例外巻き戻し
+- 暗黙のヒープ確保
+- 隠れた所有権や寿命管理
+- 必須の動的ディスパッチ機構
+- 大規模な標準実行時機構
 
-The exact numerical complexity budget is still an open design decision.
+## 3. 初期立ち上げ用コンパイラも言語設計の一部
 
-## 5. Bitlang VM Assembly is the bootstrap compatibility boundary
+Simlでは3種類のコンパイラ実装を想定します。
 
-For the MVP, Bitlang VM Assembly is the canonical low-level compatibility target and the reference environment for measuring compiler simplicity. Its strict low-level profile is based on Assam Core, which owns the shared assembly syntax, Core instruction definitions, and reference semantics.
+### 参照コンパイラ
 
-Siml language features should normally lower to small, explicit Bitlang VM Assembly operations or short deterministic sequences.
+最初はGoまたはRustで作ります。
 
-A feature should be reconsidered if its correct implementation requires the low-level bootstrap compiler to reconstruct complicated high-level concepts, run expensive global analyses, or rely on a substantial hidden runtime.
+目的は、言語設計と実装を素早く試すことです。
 
-This does not require every source construct to map one-to-one to one instruction. It requires the lowering process itself to remain understandable and mechanically implementable.
+### Bitlang VM Assembly版コンパイラ
 
-## 6. Runtime philosophy
+Bitlang VM AssemblyのAssam Core互換低水準仕様だけを使い、最小Simlコンパイラを実装します。
 
-Siml must not make the compiler simple by moving equivalent complexity into a mandatory runtime.
+この実装には2つの役割があります。
 
-The MVP should avoid requiring:
+1つ目は設計試験です。ある言語機能のために大量の補助処理、複雑な内部構造、多数の特殊例が必要になるなら、その機能はSimlには重すぎる可能性があります。
 
-- garbage collection;
-- mandatory heap allocation;
-- exception unwinding;
-- reflection metadata;
-- mandatory dynamic dispatch;
-- implicit asynchronous runtimes;
-- hidden ownership or cleanup machinery.
+2つ目は移植用の参照実装です。新しいCPU、VM、OS、実験的な環境へSimlを持ち込む開発者が、大規模なコンパイラ基盤を理解せずに読んで再実装できることを重視します。
 
-Small helper routines are acceptable when their contract is explicit and bounded. Platform services such as allocation, I/O, startup, and system calls should have explicit interfaces rather than hidden language behavior.
+### Siml自身で書くコンパイラ
 
-## 7. Execution performance
+その後、Siml自身でSimlコンパイラを書きます。
 
-Siml does not promise C-equivalent performance.
+最終的には、SimlコンパイラがSimlコンパイラ自身をコンパイルできる状態を目指します。
 
-It should, however, be suitable for operating-system and low-level software on new or experimental architectures. Therefore the language should avoid unnecessary inherent overhead.
+```text
+Go/Rust版コンパイラ
+        |
+        v
+     Simlコード
+        |
+        +-------------------------+
+        |                         |
+        v                         v
+Bitlang VM Assembly版        Siml自身で書いた
+最小コンパイラ              Simlコンパイラ
+                                  |
+                                  v
+                         自分自身をコンパイル
+```
 
-A straightforward compiler with little or no optimization should be able to produce reasonably direct code for common operations such as:
+## 4. 最小実用版の完成条件
 
-- integer arithmetic;
-- bit operations;
-- branches and loops;
-- function calls;
-- explicit memory access;
-- arrays and records;
-- pointer-oriented low-level operations.
+次のすべてを満たした時点を最小実用版の完成とします。
 
-Performance that only becomes acceptable after sophisticated optimization is a warning sign for the language design.
+1. GoまたはRustで参照コンパイラが動く。
+2. Bitlang VM Assemblyで実用的な最小コンパイラが動く。
+3. Bitlang VM Assembly版コンパイラが明示的な複雑さの上限内に収まる。
+4. Siml自身でSimlコンパイラを書ける。
+5. SimlコンパイラがSimlコンパイラ自身をコンパイルできる。
 
-Optimizations may be added later, but they are not part of the semantic foundation of the language.
+複雑さの具体的な数値上限は、参照コンパイラを実装してから決めます。
 
-### Optimization is optional
+## 5. Bitlang VM Assemblyを低水準互換境界とする
 
-A compiler that correctly implements Siml without optimization is a complete Siml compiler.
+最小実用版では、Bitlang VM Assemblyを標準の低水準出力先とし、コンパイラの単純さを測る基準環境とします。
 
-Optimization must not be required for:
+Bitlang VM Assemblyの低水準仕様はAssam Coreを基礎にしています。
 
-- language correctness;
-- acceptable basic execution on a supported target;
-- compiling the operating system;
-- self-hosting;
-- conformance with the core language.
+Simlの言語機能は、原則として少数の明示的な低水準操作か、短く決定的な命令列へ落とせるべきです。
 
-Optimizers are optional components. Different implementations may provide none, one, or several optimization strategies, and users may choose among them when an implementation supports that choice.
+ある機能を正しく実装するために、低水準コンパイラ側で高度な概念を再構築したり、全体解析を行ったり、大きな隠れた実行時機構を必要としたりするなら、その機能は再検討します。
 
-An optimizer must not change the meaning of the language, and the core language must not depend on one particular optimizer architecture or intermediate representation.
+ソース構文と命令を1対1に対応させる必要はありません。重要なのは、変換規則そのものが小さく、機械的に実装できることです。
 
-Optimization work should therefore be separable from the minimum compiler as much as practical. Making optimization better is an implementation-quality improvement, not a requirement to make Siml exist on a new architecture.
+## 6. 実行時機構
 
-## 8. Compilation performance
+コンパイラを単純に見せるために、同じ複雑さを必須の実行時機構へ移してはいけません。
 
-Fast compilation is desirable, but it is mainly expected as a consequence of a small compiler and simple language rules.
+最小実用版では、次のものを必須にしません。
 
-Siml does not make sophisticated large-project build acceleration a core language requirement.
+- ガベージコレクション
+- 必須のヒープ確保
+- 例外巻き戻し
+- 反射情報
+- 必須の動的ディスパッチ
+- 暗黙の非同期実行機構
+- 隠れた所有権や後始末
 
-For example, these may remain responsibilities of a build system or a more advanced compiler implementation:
+契約が小さく明示的な補助関数は許容します。
 
-- parallel compilation;
-- dependency caching;
-- incremental databases;
-- file-system optimization;
-- distributed compilation.
+メモリ確保、入出力、起動処理、システムコールなどは、隠れた言語動作ではなく明示的な境界にします。
 
-If a very large project becomes limited by module count or file I/O, that alone is not a reason to make the core compiler architecture substantially more complex.
+## 7. 実行性能
 
-## 9. Difference from Fast compile
+SimlはCと同等の性能を保証しません。
 
-Siml and Fast compile optimize different things.
+ただし、新しいCPUや実験的な環境でOSを書く用途に耐える必要があります。そのため、高度な最適化をしなければ実用にならない言語設計は避けます。
 
-**Fast compile** is designed to reduce end-to-end build time, even when doing so requires more sophisticated compiler or build-system machinery. A representative goal is reducing a build that takes one hour with Go to around forty minutes.
+ほぼ無最適化の単純なコンパイラでも、次のような基本操作を素直な低水準コードへ変換できることを重視します。
 
-**Siml** is designed to reduce the difficulty of implementing and porting the compiler itself.
+- 整数演算
+- ビット演算
+- 分岐と繰り返し
+- 関数呼び出し
+- 明示的なメモリアクセス
+- 配列と構造体
+- ポインタを使う低水準操作
 
-In short:
+高度な最適化をしなければ性能が極端に悪くなる機能は、言語設計上の警告とみなします。
+
+### 最適化は任意
+
+正しいSimlコードを正しく変換する無最適化コンパイラは、完全なSimlコンパイラです。
+
+最適化を、次のための必須条件にしてはいけません。
+
+- 言語の正しさ
+- 対応環境での基本的な実行
+- OSのコンパイル
+- Simlコンパイラ自身のコンパイル
+- 言語仕様への適合
+
+最適化器は任意の部品です。実装によっては最適化器を持たなくてもよく、1つでも複数でも構いません。複数ある場合に利用者が選択できる設計も許容します。
+
+最適化器によって言語の意味が変わってはいけません。また、Simlの中核仕様を特定の最適化器や特定の中間表現へ依存させません。
+
+最適化処理は、可能な限り最小コンパイラから分離します。最適化品質は実装品質の問題であり、新しいCPUへSimlを持ち込むための必須条件ではありません。
+
+## 8. コンパイル速度
+
+速いコンパイルは望ましいですが、主に小さなコンパイラと単純な言語規則の結果として得られるものと考えます。
+
+巨大プロジェクト向けの高度なビルド高速化を、言語中核の必須要件にはしません。
+
+例えば次のものは、ビルドシステムや高機能コンパイラ側の責任にできます。
+
+- 並列コンパイル
+- 依存関係のキャッシュ
+- 差分コンパイル用データベース
+- ファイルシステム入出力の最適化
+- 分散コンパイル
+
+大規模プロジェクトでファイル数や入出力が律速になっても、それだけを理由に言語や最小コンパイラを大きく複雑化しません。
+
+## 9. Fast compileとの違い
+
+SimlとFast compileは、最適化する対象が違います。
+
+**Fast compile** は、コンパイラやビルドシステムが複雑になっても、全体のビルド時間を短くすることを重視します。
+
+**Siml** は、コンパイラそのものを実装し、移植する難しさを小さくすることを重視します。
 
 ```text
 Fast compile:
-    optimize compilation time
+    コンパイル時間を最適化する
 
 Siml:
-    optimize compiler construction simplicity
+    コンパイラを作る難しさを最小化する
 ```
 
-A more complex implementation can be acceptable for Fast compile if it makes builds faster.
+Fast compileでは、ビルド時間短縮のためなら実装が複雑になっても許容できます。
 
-For Siml, making the compiler substantially more complex merely to make compilation faster can violate the primary design goal.
+Simlでは、単にコンパイルを速くするためだけに最小コンパイラを大きく複雑化することは、中心目的に反します。
 
-## 10. Feature admission questions
+## 10. 機能追加の判定基準
 
-Before a feature becomes part of the core language, its design should answer:
+新しい機能を中核言語へ入れる前に、少なくとも次を確認します。
 
-0. Does the feature preserve the requirement that a minimal Siml compiler remains simpler than a comparable minimal C compiler?
+1. 同等の最小Cコンパイラより単純という必須条件を維持できるか。
+2. Bitlang VM Assembly版コンパイラで、複雑さの上限を超えずに実装できるか。
+3. 高度な解析を前提にせず意味を説明できるか。
+4. 明示的な低水準動作へ素直に変換できるか。
+5. 隠れた実行時処理を増やさないか。
+6. ほぼ無最適化でも妥当なコードを生成できるか。
+7. Siml自身で書くコンパイラで明瞭に実装できるか。
+8. 単純な規則で済む場所に、Cのような偶発的複雑さを持ち込んでいないか。
+9. OS実装、Siml自身のコンパイラ実装、または他の中核目的で具体的な必要性が確認されているか。
 
-1. Can the feature be implemented in the Bitlang VM Assembly bootstrap compiler without exceeding the complexity budget?
-2. Can its semantics be explained without relying on sophisticated compiler analysis?
-3. Does it lower to explicit low-level behavior?
-4. Does it introduce hidden runtime work?
-5. Can a minimally optimizing compiler generate reasonably efficient code for it?
-6. Can the self-hosted Siml compiler express the implementation clearly?
-7. Is the behavior deterministic enough to avoid C-style accidental complexity where a simple rule is possible?
-8. Is there a demonstrated need for the feature in OS implementation, self-hosting, or another core Siml goal?
+仕様、コンパイラ、実行時機構のいずれかを大きく複雑化する機能は、具体的な必要性が示されない限り原則として採用しません。
 
-A feature does not need to make every answer trivial, but these questions define the default pressure of the language design. Features that add significant specification, compiler, or runtime complexity are rejected by default unless their necessity is demonstrated by concrete Siml use cases.
+## 11. 最小実用版で目指さないもの
 
-## 11. Non-goals for the MVP
+最小実用版では、次を目標にしません。
 
-The MVP is not intended to provide:
+- 最先端の最適化コンパイラ
+- 現代的なアプリケーション言語にあるすべての便利機能
+- 大規模な管理実行環境
+- 巨大プロジェクトでの最短ビルド時間
+- 高度なコンパイル時メタプログラミング
+- 大量の隠れた処理に依存する抽象化
 
-- a state-of-the-art optimizing compiler;
-- every convenience expected from a modern application language;
-- a large managed runtime;
-- maximum large-project build performance;
-- sophisticated compile-time metaprogramming;
-- abstractions whose implementation depends on substantial hidden machinery.
+総称型、特性・インターフェース、マクロ、コンパイル時メタプログラミングなどは、「将来必ず入れる機能」ではありません。
 
-These are not presumed future additions. Features such as generics, traits/interfaces, macros, compile-time metaprogramming, or other high-level mechanisms should remain outside the core language unless concrete OS or self-hosting work demonstrates that the added complexity is justified and the feature still satisfies the Siml simplicity constraints.
+OSやSiml自身のコンパイラを実際に書いた結果、具体的に必要だと分かり、なおかつSimlの単純さを壊さない場合にだけ再検討します。
