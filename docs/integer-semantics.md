@@ -1,15 +1,15 @@
-# Integer Semantics
+# 整数仕様
 
-Status: MVP draft decision  
-Last updated: 2026-10-02
+状態: 最小実用版の草案として決定  
+最終更新: 2026-10-21
 
-This document defines the current integer model for Siml.
+この文書は、現在のSimlの整数仕様を定めます。
 
-The rules are intentionally small. They should be easy to explain, easy to implement in the Bitlang VM Assembly bootstrap compiler, and safer and more predictable than C where that does not require substantial compiler or runtime complexity.
+規則は意図的に小さくします。短く説明でき、Bitlang VM Assembly版の最小コンパイラで素直に実装でき、コンパイラや必須の実行時機構を大きく複雑化しない範囲でCより予測しやすいことを重視します。
 
-## Integer types
+## 整数型
 
-The current MVP integer set is:
+現在の最小実用版では次の整数型を使います。
 
 ```text
 i8   i16   i32   i64
@@ -17,80 +17,80 @@ u8   u16   u32   u64
 isize usize
 ```
 
-The fixed-width types have exactly the width written in their names.
+固定幅整数は、型名に書かれた幅を正確に持ちます。
 
-Signed fixed-width integers use two's-complement representation.
+符号付き固定幅整数は2の補数表現です。
 
-`usize` and `isize` use the target pointer width.
+`usize` と `isize` は対象環境のポインタ幅です。
 
-## No implicit casts between typed values
+## 型付き整数の暗黙変換はしない
 
-Typed integer values do not implicitly convert to other integer types.
+型が決まった整数値は、別の整数型へ暗黙変換しません。
 
-For example:
+例:
 
 ```text
-u8 + u32   -> compile error
-i32 + i64  -> compile error
-u32 == u64 -> compile error
+u8 + u32   -> コンパイルエラー
+i32 + i64  -> コンパイルエラー
+u32 == u64 -> コンパイルエラー
 ```
 
-An explicit conversion is required when converting between integer types.
+整数型を変える場合は、明示的な型変換が必要です。
 
-The exact syntax and semantics of explicit casts are specified separately.
+明示的な型変換の構文と細かい意味は別途決めます。
 
-## Integer literals
+## 整数リテラル
 
-Integer literals are a limited convenience and are not general implicit casts.
+整数リテラルだけは、限定的に周囲の型を使って解釈します。これは一般的な暗黙変換ではありません。
 
-Rules:
+規則:
 
-1. An integer literal does not initially have a fixed integer type.
-2. If exactly one integer type is required by the immediate context, the literal is interpreted as that type if the value is representable.
-3. If the value is not representable, compilation fails.
-4. If no integer type is required by context, the literal defaults to `i32`.
-5. This contextual literal rule must not grow into a general constraint-solving type inference system.
+1. 整数リテラル自体には、最初から固定の整数型を与えない。
+2. 直近の文脈から整数型が1つに決まる場合、その値が表現可能ならその型として扱う。
+3. 値がその型に収まらない場合はコンパイルエラーにする。
+4. 周囲から型が決まらない場合は `i32` とする。
+5. この仕組みを一般的な制約解決型の型推論へ拡張しない。
 
-Examples:
+例:
 
 ```text
 let a: u8 = 10;      // OK
-let b: u8 = 300;     // compile error
+let b: u8 = 300;     // コンパイルエラー
 let c = 10;          // i32
 
 let x: u64 = 100;
-let y = x + 1;       // literal 1 is u64
+let y = x + 1;       // 1 は u64 として扱う
 
 let z: u32 = 10;
-let q = x + z;       // compile error: u64 + u32
+let q = x + z;       // コンパイルエラー: u64 + u32
 ```
 
-If contextual literals cause disproportionate complexity in the low-level bootstrap compiler, this convenience may be removed.
+このリテラル規則によってBitlang VM Assembly版コンパイラが目に見えて複雑になる場合は、この便利機能を削除します。
 
-## Addition, subtraction, and multiplication
+## 加算・減算・乗算
 
-`+`, `-`, and `*` use fixed-width wrapping semantics for both signed and unsigned integers.
+`+`、`-`、`*` は、符号付き・符号なしの両方で固定幅の折り返しを行います。
 
-For an N-bit integer, the result is the mathematical result modulo `2^N`.
+Nビット整数では、数学上の結果を `2^N` で割った余りに対応するビット列を結果とします。
 
-Examples:
+例:
 
 ```text
 u8(255) + 1 -> 0
 i8(127) + 1 -> -128
 ```
 
-Overflow in these operations is defined behavior and is not undefined behavior.
+これらの演算での桁あふれは未定義動作ではありません。
 
-No mandatory overflow check is inserted for ordinary wrapping arithmetic.
+通常の加減乗算のために、必須の桁あふれ検査は挿入しません。
 
-## Division
+## 除算
 
-Unsigned division uses ordinary integer division.
+符号なし整数は通常の整数除算を行います。
 
-Signed division rounds toward zero.
+符号付き整数は0方向へ丸めます。
 
-Examples:
+例:
 
 ```text
  7 /  3 ->  2
@@ -99,25 +99,23 @@ Examples:
 -7 / -3 ->  2
 ```
 
-Division by zero traps.
+0による除算は異常停止します。
 
-For a signed integer type, `MIN / -1` traps because the mathematical result is not representable in the same type.
+符号付き整数の `MIN / -1` も、数学上の結果が同じ型で表現できないため異常停止します。
 
-## Remainder
+## 剰余
 
-`%` follows the same division model.
+`%` は除算と同じ丸め規則に従います。
 
-The identity
+有効な入力では次の関係が成り立ちます。
 
 ```text
 a = (a / b) * b + (a % b)
 ```
 
-holds for valid operands.
+符号付き整数では、剰余の符号は左辺の値に従います。
 
-The remainder has the sign of the dividend for signed integers.
-
-Examples:
+例:
 
 ```text
  7 %  3 ->  1
@@ -126,13 +124,13 @@ Examples:
 -7 % -3 -> -1
 ```
 
-Remainder by zero traps.
+0による剰余計算は異常停止します。
 
-For consistency with signed division handling, `MIN % -1` traps.
+現時点では、符号付き除算との規則を揃えるため `MIN % -1` も異常停止とします。この特殊例が不要だと分かった場合は再検討します。
 
-## Bitwise operations
+## ビット演算
 
-The following bitwise operations are available on integers:
+整数には次のビット演算を用意します。
 
 ```text
 &
@@ -141,64 +139,64 @@ The following bitwise operations are available on integers:
 ~
 ```
 
-Operands of binary bitwise operations must have exactly the same integer type.
+2項演算の両辺は、まったく同じ整数型でなければなりません。
 
-The result has that same type.
+結果も同じ型です。
 
-## Shift operations
+## シフト演算
 
-A shift count must be less than the bit width of the shifted integer.
+シフト量は、対象整数のビット幅より小さくなければなりません。
 
-For an N-bit value:
-
-```text
-0 <= shift_count < N
-```
-
-A statically known invalid shift count is a compile error.
-
-A dynamically invalid shift count traps.
-
-Left shift discards bits shifted beyond the integer width.
-
-Unsigned right shift is logical.
-
-Signed right shift is arithmetic.
-
-Examples for `u32`:
+Nビット値では:
 
 ```text
-x << 31 -> valid
-x << 32 -> invalid
+0 <= シフト量 < N
 ```
 
-The runtime cost and bootstrap implementation cost of dynamic shift validation must be measured. If this rule proves disproportionately expensive for the Bitlang VM Assembly compiler or target model, the rule may be reconsidered.
+コンパイル時に範囲外だと分かる場合はコンパイルエラーにします。
 
-## Comparisons
+実行時にしか分からない範囲外シフトは異常停止します。
 
-Integer comparisons require operands of exactly the same type.
+左シフトでは、整数幅の外へ出たビットを捨てます。
 
-Comparison results are always `bool`.
+符号なし整数の右シフトは0を詰めます。
 
-Examples:
+符号付き整数の右シフトは符号ビットを保つ算術右シフトです。
+
+`u32` の例:
+
+```text
+x << 31 -> 有効
+x << 32 -> 無効
+```
+
+動的なシフト量検査がBitlang VM Assembly版コンパイラや対象環境を不釣り合いに複雑化する場合は、この規則を再検討します。
+
+## 比較
+
+整数比較の両辺は、まったく同じ型でなければなりません。
+
+比較結果は必ず `bool` です。
+
+例:
 
 ```text
 u32 == u32 -> bool
 u32 <  u32 -> bool
-u32 == u64 -> compile error
+u32 == u64 -> コンパイルエラー
 ```
 
-Integers do not implicitly convert to `bool`.
+整数から `bool` への暗黙変換はしません。
 
-## Design rationale
+## 設計理由
 
-The integer model is intentionally based on a few local rules:
+整数仕様は、少数の局所的な規則だけで実装できることを重視します。
 
-- widths are explicit;
-- typed values do not implicitly change integer type;
-- ordinary arithmetic wraps rather than invoking undefined behavior;
-- exceptional arithmetic cases have explicit trap behavior;
-- comparison yields `bool`;
-- contextual typing is limited to literals.
+- 整数幅は明示する。
+- 型付き整数は暗黙に別の整数型へ変えない。
+- 通常の加減乗算は未定義動作にせず固定幅で折り返す。
+- 例外的な算術条件は明示的に異常停止させる。
+- 比較結果は `bool` にする。
+- 周囲の型を使う特別扱いは整数リテラルに限定する。
 
-The bootstrap compiler should be able to implement these rules with local type checks and small lowering rules rather than C-style promotion tables or global type inference.
+最小コンパイラでは、Cの整数昇格表や複雑な暗黙変換規則、全体的な型推論を持たず、局所的な型検査と小さな低水準化規則だけで実装できることを目標にします。
