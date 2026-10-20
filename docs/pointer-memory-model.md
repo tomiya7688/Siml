@@ -1,7 +1,7 @@
 # Pointer and Memory Model
 
 Status: Proposal for review
-Last updated: 2026-10-12
+Last updated: 2026-10-20
 
 This document proposes a small pointer and memory model for the Siml MVP. None
 of the rules in the proposal section are final until accepted. The unresolved
@@ -89,7 +89,8 @@ not settle them:
 5. **Aliasing across types:** whether to adopt the scalar byte-access proposal
    below, and whether all targets must have 8-bit addressable units.
 6. **Device access:** whether to adopt the explicit volatile operations below,
-   their ordering guarantees, and the target fence interface below.
+   their pointer-mutability requirements, ordering guarantees, and the target
+   fence interface below.
 7. **Unsafe boundary:** whether raw dereference and address conversion are
    always available or must appear inside an explicit unsafe construct.
 8. **Array indexing:** whether to adopt the fixed-array-only rule below, its
@@ -285,6 +286,13 @@ architecture coverage for direct byte loads/stores and a small aliasing rule.
 `volatile_load(pointer)` and `volatile_store(pointer, value)`. The load returns
 the pointed-to type; the store requires the value to have that same type.
 These names are illustrative and do not settle the final syntax.
+
+`volatile_load` accepts either `*T` or `*const T` and returns a value of type
+`T`. `volatile_store` requires `*T` and a value of exactly type `T`; using a
+`*const T` destination is a compile error. Volatile access does not remove the
+read-only restriction. A read through `*const T` may still have device side
+effects, such as clearing a status register; read-only only prohibits stores
+through that pointer.
 
 Each operation performs exactly one memory access of the pointee width. A
 volatile access is observable: the compiler cannot remove, duplicate, merge, or

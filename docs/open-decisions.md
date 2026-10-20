@@ -1,7 +1,7 @@
 # Open Design Decisions
 
 Status: Draft  
-Last updated: 2026-10-02
+Last updated: 2026-10-20
 
 This document lists the decisions that must be made while designing Siml.
 
@@ -105,7 +105,8 @@ Decide:
   trip and conversions that change pointee mutability; exact cast syntax and
   conversion from other integer types remain part of the general cast decision;
 - support for memory-mapped I/O;
-- whether a `volatile`-like concept is required.
+- whether to adopt the proposed volatile operations, including loads through
+  `*const T` and compile-time rejection of stores through `*const T`.
 
 The rules must be implementable without a sophisticated alias analysis.
 
