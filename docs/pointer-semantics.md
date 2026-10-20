@@ -1,15 +1,17 @@
-# Pointer Semantics
+# ポインタ仕様
 
-Status: MVP draft decision  
-Last updated: 2026-10-21
+状態: 最小実用版の草案として一部決定  
+最終更新: 2026-10-21
 
-This document records the current Siml pointer decisions. The pointer and memory model is still incomplete; only the rules already decided are fixed here.
+この文書は、現在までに決めたSimlのポインタ規則を記録します。
 
-## Pointer arithmetic
+ポインタとメモリの仕様全体はまだ未完成です。ここでは、すでに決めた部分だけを固定します。
 
-Siml supports a deliberately small set of pointer arithmetic operations because they are directly useful for operating-system and low-level programming.
+## ポインタ演算
 
-For a pointer `p: *T`, the following forms are supported:
+OSや低水準プログラムで直接必要になるため、Simlは限定的なポインタ演算を持ちます。
+
+`p: *T` に対して、次の形だけを認めます。
 
 ```text
 p + n
@@ -17,54 +19,54 @@ p - n
 p1 - p2
 ```
 
-No other arithmetic on pointers is implied by this feature.
+この機能から、それ以外のポインタ算術は導入しません。
 
-In particular:
+特に次はコンパイルエラーです。
 
 ```text
-n + p       -> compile error
-p1 + p2     -> compile error
-p * n       -> compile error
-p / n       -> compile error
+n + p       -> コンパイルエラー
+p1 + p2     -> コンパイルエラー
+p * n       -> コンパイルエラー
+p / n       -> コンパイルエラー
 ```
 
-Restricting the valid forms keeps parsing, type checking, specification rules, and lowering small.
+有効な形を少数に限定することで、構文解析、型検査、仕様、低水準化を小さく保ちます。
 
-## Element-scaled offsets
+## 要素単位の移動
 
-`p + n` and `p - n` move by elements of `T`, not by raw bytes.
+`p + n` と `p - n` は、生のバイト数ではなく `T` の要素数だけ移動します。
 
-Conceptually:
+概念上は次の意味です。
 
 ```text
 p + n  -> address(p) + n * sizeof(T)
 p - n  -> address(p) - n * sizeof(T)
 ```
 
-For example, if `p: *u32` and `u32` is four bytes wide:
+例えば `p: *u32` で `u32` が4バイトなら:
 
 ```text
-p + 1  -> four bytes after p
-p + 2  -> eight bytes after p
+p + 1  -> p から4バイト先
+p + 2  -> p から8バイト先
 ```
 
-Byte-oriented address traversal can use a `*u8` pointer.
+1バイト単位でアドレスを進めたい場合は `*u8` を使えます。
 
-The exact integer type or types accepted for `n` are still open and should be chosen to keep the compiler and specification simple.
+`n` に許す整数型はまだ未決定です。仕様とコンパイラが最も単純になるものを選びます。
 
-## Pointer difference
+## ポインタ同士の差
 
-Subtracting two pointers of the same pointer type produces their distance in elements, not bytes.
+同じポインタ型どうしを引くと、バイト数ではなく要素数の差を返します。
 
-Conceptually, for `p1: *T` and `p2: *T`:
+`p1: *T` と `p2: *T` について、概念上は:
 
 ```text
 p1 - p2 -> (address(p1) - address(p2)) / sizeof(T)
 ```
 
-The result type is `isize`.
+結果型は `isize` とします。
 
-Example for `*u32`:
+`*u32` の例:
 
 ```text
 p1 = 0x1010
@@ -73,36 +75,36 @@ p2 = 0x1000
 p1 - p2 -> 4
 ```
 
-The validity rules for subtracting pointers that do not refer to the same logical memory region are still open.
+別々のメモリ領域を指すポインタ同士を引いた場合の扱いは、まだ未決定です。
 
-## No implicit array-to-pointer decay
+## 配列からポインタへの暗黙変換はしない
 
-An array value does not implicitly become a pointer.
+配列値は暗黙にポインタへ変わりません。
 
-This intentionally avoids C-style array-to-pointer decay and keeps array values and pointer values as distinct concepts.
+Cの配列からポインタへの暗黙変換を持ち込まず、配列とポインタを別の概念として扱います。
 
-Any operation that obtains a pointer to array storage must be explicit.
+配列の記憶領域を指すポインタを得る操作は明示的にします。
 
-The exact syntax for taking the address of an array element or array storage is still open.
+配列要素や配列全体のアドレスを取る具体的な構文は、まだ未決定です。
 
-## No implicit pointer/integer conversion
+## ポインタと整数の暗黙変換はしない
 
-Pointer arithmetic does not introduce implicit conversion between pointers and integers.
+ポインタ演算を導入しても、ポインタと整数の暗黙変換は認めません。
 
-Pointer-to-integer and integer-to-pointer conversion, if supported, must be explicit.
+ポインタから整数、整数からポインタへの変換を用意する場合は、必ず明示的な操作にします。
 
-The exact syntax and semantics of those conversions are still open.
+その構文と意味はまだ未決定です。
 
-## Design rationale
+## 設計理由
 
-These rules are intended to preserve the operations needed for kernels, allocators, drivers, binary data traversal, and similar OS work while keeping the compiler smaller than a comparable C compiler.
+カーネル、メモリ管理、ドライバ、バイナリデータ処理などに必要な操作を残しつつ、同等のCコンパイラより小さな規則で実装できることを狙います。
 
-The initial model deliberately avoids:
+最初の仕様では、意図的に次を避けます。
 
-- commutative `integer + pointer` syntax;
-- arbitrary arithmetic operators on pointers;
-- implicit array decay;
-- implicit pointer/integer conversion;
-- C-style conversion rules around pointer expressions.
+- `integer + pointer` のような左右対称の別表記
+- ポインタに対する任意の算術演算
+- 配列からポインタへの暗黙変換
+- ポインタと整数の暗黙変換
+- ポインタ式に絡むC風の複雑な変換規則
 
-The remaining pointer and memory model should continue to prefer explicit local rules over hidden conversions or whole-program analysis.
+今後決めるメモリ仕様も、隠れた変換やプログラム全体の解析より、局所的で明示的な規則を優先します。
