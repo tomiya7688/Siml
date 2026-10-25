@@ -1,7 +1,7 @@
 # Pointer and Memory Model
 
 Status: Proposal for review
-Last updated: 2026-10-20
+Last updated: 2026-10-25
 
 This document proposes a small pointer and memory model for the Siml MVP. None
 of the rules in the proposal section are final until accepted. The unresolved
@@ -89,8 +89,8 @@ not settle them:
 5. **Aliasing across types:** whether to adopt the scalar byte-access proposal
    below, and whether all targets must have 8-bit addressable units.
 6. **Device access:** whether to adopt the explicit volatile operations below,
-   their pointer-mutability requirements, ordering guarantees, and the target
-   fence interface below.
+   their pointer-mutability requirements, supported target access widths,
+   ordering guarantees, and the target fence interface below.
 7. **Unsafe boundary:** whether raw dereference and address conversion are
    always available or must appear inside an explicit unsafe construct.
 8. **Array indexing:** whether to adopt the fixed-array-only rule below, its
@@ -294,11 +294,21 @@ read-only restriction. A read through `*const T` may still have device side
 effects, such as clearing a status register; read-only only prohibits stores
 through that pointer.
 
-Each operation performs exactly one memory access of the pointee width. A
-volatile access is observable: the compiler cannot remove, duplicate, merge, or
-reorder it with another volatile access. The compiler also cannot move an
-ordinary memory access across a volatile operation. These rules preserve the
-written order of accesses without making every pointer or variable volatile.
+Limit `T` to primitive integer and data pointer types for this MVP proposal.
+The target contract lists supported volatile load and store widths separately.
+An operation whose type or width is unsupported is a compile error, even if
+ordinary access to that type is available. `bool` and aggregate volatile
+accesses remain outside this proposal until their representations are settled.
+
+Each supported operation performs exactly one target memory access of the
+pointee width. The compiler must not split it into narrower accesses or replace
+it with a wider access or a read-modify-write sequence. This does not guarantee
+a single physical bus transaction; device compatibility remains a target
+contract requirement. A volatile access is observable: the compiler cannot
+remove, duplicate, merge, or reorder it with another volatile access. The
+compiler also cannot move an ordinary memory access across a volatile operation.
+These rules preserve the written order of accesses without making every pointer
+or variable volatile.
 
 Volatile operations do not make an access atomic, synchronize threads, or
 promise that the processor or device observes accesses in that order. Targets
