@@ -18,8 +18,10 @@ only the source documents needed for the current change.
   when changing project direction.
 - Integer rules: `docs/integer-semantics.md`.
 - Accepted decisions and remaining design questions: `docs/open-decisions.md`.
-- Pointer and memory work: `docs/pointer-memory-model.md`. Its contents are
-  proposals for review, not accepted language rules.
+- Pointer decisions: `docs/pointer-semantics.md` records accepted rules.
+- Pointer and memory proposals: `docs/pointer-memory-model.md`. Its contents
+  are discussion for review, not accepted language rules. Japanese documents
+  are canonical; `docs/en/` contains English translations.
 
 Do not read all design documents by default. Use `rg` to locate the exact topic
 and inspect the relevant section. When changing semantics, update the owning
@@ -28,11 +30,14 @@ from accepted rules.
 
 ## Project stage
 
-Siml is in early design; no compiler implementation or automated test suite is
-present yet. For documentation-only edits, use `git diff --check` and review the
-resulting diff. Do not describe design proposals as implemented behavior.
+Siml is in early design; no compiler implementation is present yet. CI checks
+UTF-8 Markdown and JSON and the initial formatter coverage. Install the pinned
+formatter with `npm ci --ignore-scripts`, run `npm run format -- <files>` and
+`npm run format:check -- <files>` for changed files, and use
+`npm run format:check:ci` for the complete CI formatter check. For documentation
+edits also run `git diff --check` and review the diff. Do not describe
+proposals as implemented behavior.
 
 Do not add indexes, context packs, or helper tools for this small document set
 unless repeated work shows that the saved search effort will exceed their
 maintenance cost.
-

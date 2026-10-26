@@ -1,11 +1,14 @@
 # Pointer and Memory Model
 
 Status: Proposal for review
-Last updated: 2026-10-25
+Last updated: 2026-10-27
 
 This document proposes a small pointer and memory model for the Siml MVP. None
 of the rules in the proposal section are final until accepted. The unresolved
-section records choices that still need agreement.
+section records choices that still need agreement. The Japanese [pointer
+specification](pointer-semantics.md) records the decisions already made and
+prevails where this review draft differs. This English document is discussion
+material, not the canonical specification.
 
 ## Goals
 
@@ -37,8 +40,9 @@ section records choices that still need agreement.
 - `&place` obtains the address of an addressable variable or field.
 - `*pointer` reads or writes according to the pointer's access qualifier.
   Dereferencing null traps.
-- Pointer arithmetic is not part of the MVP. Indexing can be added as a
-  separate construct with explicit array rules.
+- The MVP includes limited pointer arithmetic as described in the accepted
+  [pointer specification](pointer-semantics.md). Array indexing is a separate
+  proposal with explicit rules.
 - A non-null pointer must designate storage large enough for a value of its
   pointee type. The compiler does not insert general bounds or validity checks.
 - Loads and stores are ordinary memory operations. The language does not
@@ -130,8 +134,8 @@ For example, `**T` is a pointer to a pointer to `T`. A `*pointer` expression
 can be read or written subject to the language's place-mutability rules.
 
 This gives the type and expression forms a direct recursive-descent grammar.
-It does not require a separate member-access arrow or pointer arithmetic
-syntax. The spellings are a proposal; precedence details belong in the later
+It does not require a separate member-access arrow. The spellings are a
+proposal; precedence details belong in the later
 concrete grammar.
 
 Pointee mutability and variable mutability are proposed separately below.
@@ -175,10 +179,11 @@ produces a suitably aligned pointer. The compiler does not insert a dynamic
 alignment check.
 
 This keeps ordinary access as a direct load/store and gives the compiler a
-simple precondition. An access whose alignment cannot be established from the
-program violates that precondition; whether it must trap or has another defined
-failure result belongs to the still-open failure policy. This proposal does
-not promise that every target traps on a misaligned access.
+simple precondition. Alignment need not be proven statically, but the address
+must be aligned when accessed. An access using a misaligned address violates
+that precondition. How violations are handled, including whether they trap,
+remains undecided in the broader failure policy. This proposal does not promise
+that every target traps on a misaligned access.
 
 This recommendation is not final. In particular, byte-oriented access to
 packed data or devices would need a separate explicit operation or rule.
@@ -347,8 +352,9 @@ and do not implicitly convert arrays to pointers.
 The index has type `usize`. A statically known index outside the array length
 is a compile error; a dynamically out-of-range index traps. A valid access
 addresses the `index`th contiguous element and produces an addressable place of
-the element type. Lowering may calculate that address internally, but this does
-not add pointer arithmetic to the source language.
+the element type. This rule is defined by array bounds; lowering need not use
+source-level pointer arithmetic. Indexing adds no pointer arithmetic operators
+beyond those in the pointer specification.
 
 The dynamic check requires a comparison and branch for each access unless the
 compiler can prove the index is in range. That cost should be measured against
@@ -368,7 +374,6 @@ The most consequential baseline choices to accept or revise are:
 - pointer conversions preserve address bits, using a target-reserved null
   value that need not be zero;
 - null pointers, with null dereference trapping before memory access;
-- no pointer arithmetic in the MVP;
 - fixed-size array indexing only, with `usize` indices and dynamic bounds
   traps;
 - no general pointer-validity checks beyond fixed-array bounds;
@@ -384,4 +389,3 @@ The most consequential baseline choices to accept or revise are:
 
 Once this baseline is agreed, the unresolved list can be split into separate
 small decisions and the accepted rules moved into the MVP specification.
-

@@ -1,428 +1,437 @@
-# Open Design Decisions
+# 未決定事項
 
-Status: Draft  
-Last updated: 2026-10-25
+状態: 草案  
+最終更新: 2026-10-27
 
-This document lists the decisions that must be made while designing Siml.
+[英語翻訳](en/open-decisions.md)
 
-The purpose is not to decide every feature immediately. It is to make the design surface explicit and to keep decisions ordered by their effect on the bootstrap compiler.
+この文書は、Siml設計で今後決める必要がある事項を整理します。
 
-## Decision rule
+すべてを今すぐ決めることが目的ではありません。Bitlang VM Assembly版の最小コンパイラへ与える影響が大きいものから順に決めます。
 
-When multiple designs are reasonable, prefer the design that:
+## 判断原則
 
-1. preserves the mandatory requirement that the minimum Siml compiler remain simpler than a comparable minimum C compiler for freestanding / OS work;
-2. keeps the Bitlang VM Assembly bootstrap compiler smaller and easier to understand;
-3. keeps runtime requirements explicit and small;
-4. produces reasonably direct low-level code without sophisticated optimization;
-5. gives source programs more predictable behavior than C where that can be achieved cheaply;
-6. remains expressive enough to write the Siml compiler and operating-system code.
+複数の設計が妥当な場合は、次を優先します。
 
-Syntax convenience is secondary to these constraints.
+1. freestanding / OS用途で同等の最小Cコンパイラより、最小Simlコンパイラを単純に保てる。
+2. Bitlang VM Assembly版コンパイラを小さく、読みやすく保てる。
+3. 必須の実行時機構を小さく明示的に保てる。
+4. 高度な最適化なしでも素直な低水準コードを生成できる。
+5. 安価に実現できる範囲で、Cより予測しやすい動作を与えられる。
+6. Simlコンパイラ自身とOS全体を書ける表現力を保てる。
+
+構文上の便利さは、これらより下位です。
 
 ---
 
-# P0: Decisions required for the first compiler
+# 優先度0: 最初のコンパイラに必要な事項
 
-These decisions define the minimum language that the Go/Rust and Bitlang VM Assembly bootstrap compilers must share.
+Go/Rust版とBitlang VM Assembly版の両方が共有する最小言語を決めます。
 
-## 1. Compilation model
+## 1. コンパイル単位
 
-Decide:
+決めること:
 
-- What is the smallest independently compilable unit?
-- Does one invocation compile exactly one source file or one module?
-- Is Bitlang VM Assembly the required MVP output format?
-- Are symbols emitted in a form suitable for later linking?
-- How are constants and static data represented in the output?
+- 独立してコンパイルできる最小単位は何か。
+- 1回のコンパイラ実行で1ファイルだけ扱うか、1モジュールを扱うか。
+- 最小実用版の標準出力をBitlang VM Assemblyとするか。
+- 後段のリンクに使える形で記号を出力するか。
+- 定数や静的データをどう表現するか。
 
-Current direction:
+現在の方向:
 
-- Bitlang VM Assembly is the canonical MVP lowering target. Its strict low-level profile is based on Assam Core.
-- Direct native-code backends may exist later but must not be required to define the language.
+- Bitlang VM Assemblyを最小実用版の標準低水準出力とする。
+- その低水準仕様はAssam Coreを基礎にする。
+- 将来、直接機械語を出す実装があってもよいが、それを言語仕様の前提にはしない。
 
-## 2. Primitive types
+## 2. 基本型
 
-Decide the exact primitive type set.
+正確な基本型集合を決める。
 
-Questions include:
+検討事項:
 
-- Which fixed-width signed integers exist?
-- Which fixed-width unsigned integers exist?
-- Is there a native machine-word integer type?
-- Is `bool` a distinct type?
-- Is there a language-level character type?
-- Are floating-point types part of the MVP?
-- How are integer literals typed?
+- 固定幅符号付き整数
+- 固定幅符号なし整数
+- ポインタ幅整数
+- `bool` を整数と別型にするか
+- 文字型を言語に持つか
+- 浮動小数点型を最小実用版へ入れるか
+- 整数リテラルの型決定
 
-The type set should not require complicated promotion rules.
+型集合のために複雑な昇格規則を導入しない。
 
-## 3. Integer semantics
+## 3. 整数仕様
 
-The initial integer semantics are defined in [Integer semantics](integer-semantics.md).
+現在の整数仕様は [整数仕様](integer-semantics.md) にまとめています。
 
-Current decisions include:
+現在決まっていること:
 
-- no implicit casts between typed integer values;
-- contextual typing for integer literals, with `i32` as the default when no type is required;
-- wrapping `+`, `-`, and `*`;
-- division and remainder with explicit trap cases;
-- defined signed and unsigned right-shift behavior;
-- invalid dynamic shift counts trap;
-- comparisons require matching types and return `bool`.
+- 型付き整数値どうしの暗黙変換はしない。
+- 整数リテラルだけ限定的に周囲の型を使って解釈し、型が決まらない場合は `i32`。
+- `+`、`-`、`*` は固定幅で折り返す。
+- 除算と剰余には明示的な異常停止条件を持つ。
+- 符号付き・符号なしの右シフトの意味を固定する。
+- 動的な範囲外シフトは異常停止する。
+- 比較の両辺は同じ型を要求し、結果は `bool`。
 
-Still open:
+まだ決めること:
 
-- exact explicit-cast syntax and conversion semantics;
-- whether contextual integer literals remain cheap enough in the Bitlang VM Assembly bootstrap compiler;
-- whether dynamic invalid-shift trapping remains within the desired implementation/runtime complexity budget.
+- 明示的な型変換の構文と正確な意味。
+- 整数リテラルの限定的な文脈依存がBitlang VM Assembly版コンパイラで十分小さく実装できるか。
+- 動的シフト量の検査が複雑さの上限内に収まるか。
+- `MIN % -1` を本当に異常停止させる必要があるか。
 
-## 4. Pointer and memory model
+## 4. ポインタとメモリ
 
-This is central for OS development.
+OS実装の中心となる部分です。
 
-An initial baseline proposal is recorded in [Pointer and memory model](pointer-memory-model.md).
-It is a proposal for review, not an accepted language decision.
-That document proposes `*T` for writable pointee access and `*const T` for
-read-only pointee access, separately from whether the pointer variable can be
-reassigned. These rules remain unaccepted proposals.
+現在のポインタ演算は [ポインタ仕様](pointer-semantics.md) にまとめています。
 
-Decide:
+追加のメモリモデルについては、英語の[検討案](pointer-memory-model.md)があります。検討案は未採用であり、現在決まっているポインタ仕様を優先します。
 
-- pointer syntax and pointer types;
-- address-of and dereference operations;
-- whether pointer arithmetic exists;
-- whether a null pointer value is defined;
-- whether target profiles supply an `alignof(T)` value per primitive integer
-  and pointer type, as proposed in [Pointer and memory model](pointer-memory-model.md);
-- behavior of misaligned access and exact alignment values for each target;
-- load/store widths;
-- whether to adopt the scalar byte-level aliasing rules in [Pointer and memory
-  model](pointer-memory-model.md), including the target byte order;
-- whether every initial target can expose data pointers through one flat
-  address space, as proposed in [Pointer and memory model](pointer-memory-model.md);
-- casts between integers and pointers, including the proposed `usize` round
-  trip and conversions that change pointee mutability; exact cast syntax and
-  conversion from other integer types remain part of the general cast decision;
-- support for memory-mapped I/O;
-- whether to adopt the proposed volatile operations, including loads through
-  `*const T`, compile-time rejection of stores through `*const T`, and rejection
-  of types or access widths unsupported by the target's volatile contract.
+検討案では、アラインメントの静的な証明を要求せず、アクセス時の整列を前提としています。前提違反の扱いは未決定です。また、固定長配列の添字アクセスを配列の境界で定義し、採用済みのポインタ演算規則を変更しない案を示しています。
 
-The rules must be implementable without a sophisticated alias analysis.
+現在決まっていること:
 
-## 5. Variables and mutability
+- ポインタ演算はOS用途で直接必要なため最小実用版に含める。
+- `p: *T` に対する `p + n` と `p - n` は要素数単位で移動する。
+- 同じポインタ型どうしの `p1 - p2` は要素数の差を `isize` で返す。
+- `integer + pointer`、ポインタ同士の加算、乗算、除算などは認めない。
+- 配列からポインタへの暗黙変換はしない。
+- ポインタと整数の暗黙変換はしない。
 
-Decide:
+まだ決めること:
 
-- declaration syntax;
-- whether variables are mutable by default;
-- whether initialization is mandatory;
-- whether uninitialized storage can be explicitly requested for low-level use;
-- local variable storage rules;
-- global/static variables;
-- constants.
+- 最終的なポインタ型構文。
+- アドレス取得と参照先読み書きの構文。
+- ポインタ加減算に使える整数型。
+- ポインタ同士の差が有効になる条件。
+- nullポインタを言語として定義するか。
+- アラインメント規則。
+- 非アラインアクセスの扱い。
+- 読み書き幅の規則。
+- 別名参照の規則。
+- アドレスの表現。
+- 整数とポインタの明示変換。
+- メモリマップド入出力。
+- `volatile` 相当の仕組みが必要か。
 
-The bootstrap compiler should not require control-flow-heavy definite-assignment analysis unless there is a strong reason.
+高度な別名解析を必要としない規則にする。
 
-## 6. Expressions and evaluation order
+## 5. 変数と変更可能性
 
-Decide:
+決めること:
 
-- operator set;
-- precedence;
-- associativity;
-- evaluation order;
-- assignment as statement or expression;
-- short-circuit boolean behavior;
-- side effects inside expressions.
+- 宣言構文。
+- 変数を既定で変更可能にするか。
+- 初期化を必須にするか。
+- 低水準用途の未初期化領域を明示的に要求できるか。
+- 局所変数の記憶規則。
+- 大域変数・静的変数。
+- 定数。
 
-Evaluation order should be explicit and deterministic.
+強い理由がない限り、複雑な制御フロー解析を必要とする「必ず初期化済みか」の証明を最小コンパイラへ要求しない。
 
-## 7. Control flow
+## 6. 式と評価順序
 
-Decide the MVP control-flow constructs.
+決めること:
 
-Candidates include:
+- 演算子集合。
+- 優先順位。
+- 結合規則。
+- 評価順序。
+- 代入を文にするか式にするか。
+- 論理演算の短絡評価。
+- 式の中の副作用。
 
-- `if` / `else`;
-- `while`;
-- infinite loop;
-- `break`;
-- `continue`;
-- `return`;
-- `goto` and labels;
-- a basic `for` form.
+評価順序は明示的かつ決定的にする。
 
-Every construct should lower mechanically to explicit branches.
+## 7. 制御構文
 
-## 8. Functions
+最小実用版に必要なものを決める。
 
-Decide:
+候補:
 
-- function declaration syntax;
-- argument passing model;
-- return values;
-- recursion;
-- function pointers;
-- multiple return values, if any;
-- variadic functions;
-- external functions;
-- forward declarations;
-- visibility.
+- `if` / `else`
+- `while`
+- 無限ループ
+- `break`
+- `continue`
+- `return`
+- ラベルと `goto`
+- 単純な `for`
 
-The language-level function model must remain compatible with a simple explicit calling convention.
+すべて、明示的な分岐へ機械的に落とせるものを優先する。
 
-## 9. Aggregate data
+## 8. 関数
 
-Decide the minimum aggregate types.
+決めること:
 
-Likely areas:
+- 関数宣言構文。
+- 引数の渡し方。
+- 戻り値。
+- 再帰。
+- 関数ポインタ。
+- 複数戻り値を持つか。
+- 可変長引数を持つか。
+- 外部関数。
+- 前方宣言。
+- 公開範囲。
 
-- fixed-size arrays;
-- a proposed fixed-array-only indexing rule is recorded in [Pointer and memory model](pointer-memory-model.md);
-  it remains undecided;
-- structs/records;
-- field layout;
-- padding and alignment;
-- anonymous aggregates;
-- unions;
-- tagged unions/enums.
+単純で明示的な呼出規約に落とせる関数モデルにする。
 
-For OS work, memory layout must be predictable.
+## 9. 集合データ型
 
-## 10. Casts and conversions
+最小限必要な集合データ型を決める。
 
-Decide exactly which conversions are:
+主な検討対象:
 
-- automatic;
-- explicit but safe;
-- explicit and low-level;
-- forbidden.
+- 固定長配列
+- 構造体
+- フィールド配置
+- 詰め物とアラインメント
+- 無名構造
+- 共用体
+- 列挙型やタグ付き共用体
 
-A small conversion table is preferable to a large set of contextual promotion rules.
+OS用途ではメモリ配置が予測可能でなければならない。
 
-Pointer-specific conversion recommendations are recorded in [Pointer and
-memory model](pointer-memory-model.md); exact cast syntax and integer-to-`usize`
-conversion semantics remain undecided.
+## 10. 型変換
 
-## 11. Failure, trap, and undefined behavior policy
+どの変換を次のどれにするか正確に決める。
 
-For each invalid operation, decide whether it:
+- 自動
+- 明示的だが通常用途
+- 明示的な低水準操作
+- 禁止
 
-- is rejected at compile time;
-- has defined wrapping or other semantics;
-- traps at runtime;
-- has implementation-defined behavior;
-- is explicitly undefined.
+文脈依存の大きな昇格表より、小さな変換表を優先する。
 
-Important cases include:
+## 11. 失敗・異常停止・未定義動作
 
-- integer overflow;
-- division by zero;
-- invalid shifts;
-- null dereference;
-- invalid pointer access;
-- out-of-bounds array access;
-- invalid casts;
-- unreachable states.
+無効な操作ごとに、次のどれにするか決める。
 
-The pointer proposal recommends trapping on null dereference before performing
-the memory access; see [Pointer and memory model](pointer-memory-model.md).
-The general trap mechanism and recovery policy remain undecided.
+- コンパイル時に拒否
+- 明示的に定義された折り返し等の動作
+- 実行時に異常停止
+- 実装依存
+- 明示的な未定義動作
 
-Siml should avoid undefined behavior when a cheap deterministic rule is available, but it must not require expensive runtime checks merely to eliminate every possible undefined operation.
+重要な例:
 
-## 12. Minimum parser strategy
+- 整数の桁あふれ
+- 0除算
+- 不正なシフト
+- null参照
+- 不正なポインタアクセス
+- 配列範囲外アクセス
+- 不正な型変換
+- 到達不能状態
 
-The grammar should be intentionally compatible with a small hand-written parser.
+安価で決定的な規則を与えられる場合は、Cのような未定義動作を避ける。
 
-Decide:
+ただし、あらゆる誤りを防ぐために高価な実行時検査を必須化しない。
 
-- tokenization rules;
-- comment syntax;
-- statement termination;
-- block syntax;
-- declaration grammar;
-- whether parsing requires arbitrary backtracking;
-- whether contextual keywords exist.
+## 12. 最小構文解析方針
 
-A recursive-descent or similarly straightforward parser should be sufficient.
+小さな手書き構文解析器で扱える文法にする。
+
+決めること:
+
+- 字句規則。
+- コメント構文。
+- 文の終端。
+- ブロック構文。
+- 宣言文法。
+- 任意長の後戻りが必要か。
+- 文脈依存キーワードを持つか。
+
+再帰下降法など、単純な手書き構文解析で十分な文法を目指す。
 
 ---
 
-# P1: Decisions required for useful OS-scale programs
+# 優先度1: OS規模のプログラムに必要な事項
 
-## 13. Modules and imports
+## 13. モジュールと読み込み
 
-Decide:
+決めること:
 
-- mapping between files and modules;
-- import syntax;
-- symbol visibility;
-- cyclic dependencies;
-- name qualification;
-- whether interfaces/header-like summaries exist;
-- how much imported source a compiler must read.
+- ファイルとモジュールの対応。
+- 読み込み構文。
+- 記号の公開範囲。
+- 循環依存。
+- 名前修飾。
+- Cのヘッダのような概要ファイルを持つか。
+- 読み込み先のソースをどこまで読む必要があるか。
 
-The first design should favor compiler simplicity over advanced incremental compilation.
+最初の設計では、高度な差分コンパイルより最小コンパイラの単純さを優先する。
 
-## 14. Separate compilation and linking
+## 14. 分割コンパイルとリンク
 
-Decide:
+決めること:
 
-- what metadata is emitted between compilation units;
-- symbol naming;
-- relocation representation;
-- how static data is referenced;
-- how Bitlang VM Assembly output from multiple units is combined;
-- whether a linker is considered part of Siml or an external tool.
+- コンパイル単位間で出力する情報。
+- 記号名。
+- 再配置情報。
+- 静的データ参照。
+- 複数のBitlang VM Assembly出力をどう結合するか。
+- リンカをSimlの一部とするか外部道具とするか。
 
-## 15. ABI boundary
+## 15. ABI境界
 
-Distinguish the language semantics from a target ABI.
+言語仕様と対象環境のABIを分ける。
 
-Decide:
+決めること:
 
-- Siml-to-Siml calling convention requirements;
-- external ABI annotations;
-- C ABI interoperability, if supported;
-- register/stack responsibilities;
-- struct argument and return handling;
-- stack alignment;
-- platform-specific escape hatches.
+- Siml同士の呼出規約。
+- 外部ABI指定。
+- C ABI互換を持つか。
+- レジスタとスタックの責任分担。
+- 構造体引数と戻り値。
+- スタックアラインメント。
+- 対象環境固有の逃げ道。
 
-A new architecture should not need a large ABI implementation before simple Siml code can run.
+新しいCPUで簡単なSimlコードを動かすだけのために、大規模なABI実装を要求しない。
 
-## 16. Runtime contract
+## 16. 必須の実行時機構
 
-Write down the complete set of services a conforming minimal environment must provide.
+最小環境が提供しなければならない処理を完全に書き出す。
 
-Candidates include:
+候補:
 
-- none beyond raw program entry;
-- trap handling;
-- memory copy/set helpers;
-- integer helpers for operations unsupported by the target;
-- optional allocator interface;
-- startup/termination hooks.
+- 生のプログラム入口以外は何も要求しない。
+- 異常停止処理。
+- メモリコピー・初期化補助。
+- 対象CPUが直接持たない整数演算の補助。
+- 任意のメモリアロケータ境界。
+- 起動・終了処理。
 
-The required runtime should be small enough to audit as part of a new platform port.
+新しい環境への移植時に全体を監査できる規模に保つ。
 
-## 17. Platform and unsafe interfaces
+## 17. 機械固有・危険操作の境界
 
-OS code needs explicit access to machine facilities.
+OSコードには機械機能への明示的なアクセスが必要です。
 
-Decide how Siml represents:
+次をどう表現するか決める。
 
-- inline or external assembly;
-- raw Bitlang VM Assembly / Assam Core blocks, if any;
-- special registers;
-- interrupts;
-- memory barriers;
-- atomic operations;
-- system calls;
-- architecture-specific intrinsics.
+- インラインまたは外部アセンブリ。
+- 生のBitlang VM Assembly / Assam Core記述。
+- 特殊レジスタ。
+- 割り込み。
+- メモリ障壁。
+- 原子操作。
+- システムコール。
+- CPU固有命令。
 
-These should not contaminate the portable core more than necessary.
-
----
-
-# P2: Decisions that can wait until the bootstrap core works
-
-Potential later features include:
-
-- richer enums/tagged unions;
-- slices;
-- generics;
-- methods;
-- interfaces/traits;
-- compile-time evaluation;
-- macros;
-- richer standard-library abstractions;
-- optional safety checks;
-- convenience iteration syntax;
-- advanced optimization annotations.
-
-Each of these must pass the feature-admission questions in the design principles before becoming part of the core language.
+携帯可能な中核仕様へ、対象固有の複雑さを必要以上に持ち込まない。
 
 ---
 
-# Compiler complexity budget
+# 優先度2: 原則として中核言語へ入れない機能
 
-The MVP requires a numerical or otherwise testable complexity budget for the Bitlang VM Assembly bootstrap compiler.
+次のものは「後で実装する予定の機能」ではありません。
 
-The exact limits are not yet decided, but the project should track at least:
+言語仕様、コンパイラ、必須の実行時機構を簡単に複雑化し得るため、原則として中核言語から外します。
 
-- Bitlang VM Assembly source/instruction count;
-- number of compiler passes;
-- number of compiler functions/routines;
-- number and kind of internal data structures;
-- amount of required dynamic allocation;
-- number of mandatory runtime/helper routines;
-- maximum semantic state that must survive between passes;
-- number of target-specific special cases in the language frontend.
+- 高機能な列挙型・タグ付き共用体
+- スライス
+- 総称型
+- メソッド
+- インターフェース・特性
+- コンパイル時評価
+- マクロ
+- 高水準の言語組み込み抽象化
+- プログラム全体の解析を必要とする安全機構
+- 便利な繰り返し構文
+- 最適化器専用の言語注釈
 
-The budget should measure architectural complexity, not reward code golfing.
+OSやSiml自身のコンパイラを実際に書いた結果、既存の言語機能やライブラリだけでは綺麗に解決できない具体的な必要性が確認された場合にだけ再検討します。
 
-A shorter implementation that is difficult to understand is not automatically simpler.
+再検討時も、同等の最小Cコンパイラより単純であるという条件を含む設計原則をすべて満たす必要があります。
 
-## Candidate acceptance model
-
-A future MVP gate could require all of the following:
-
-- hand-written lexer;
-- hand-written parser;
-- straightforward symbol table;
-- local and deterministic type checking;
-- no mandatory optimizer;
-- no mandatory SSA;
-- no garbage collector;
-- bounded and documented helper runtime;
-- direct or very small-IR lowering to Bitlang VM Assembly.
-
-The numerical limits should be chosen only after the first Go/Rust implementation provides enough information to estimate what is realistic.
+言語機能へ昇格させる必要のないものはライブラリに置きます。データ構造、文字列、コンテナ、アロケータなどは、特別なコンパイラ支援なしで実装できる限りライブラリ側の責任です。
 
 ---
 
-# Self-hosting acceptance test
+# コンパイラ複雑さの上限
 
-Self-hosting should have an explicit test rather than a symbolic milestone.
+最小実用版では、Bitlang VM Assembly版コンパイラに数値または他の検証可能な複雑さの上限を設けます。
 
-At minimum:
+具体値はまだ決めませんが、少なくとも次を測ります。
+
+- Bitlang VM Assemblyのソース量・命令量
+- コンパイラ処理段数
+- 関数・処理単位の数
+- 内部データ構造の数と種類
+- 動的メモリ確保の必要量
+- 必須補助関数・実行時処理の数
+- 処理段をまたいで保持する意味情報の量
+- 言語前段にある対象環境固有の特殊例の数
+
+短いコードを競うものではありません。
+
+行数が少なくても、読みにくく再実装しにくいものを「単純」とはみなしません。
+
+## 最小実装の合格条件候補
+
+将来の最小実用版では、少なくとも次を要求する案があります。
+
+- 手書き字句解析器
+- 手書き構文解析器
+- 単純な記号表
+- 局所的で決定的な型検査
+- 最適化器を必須にしない
+- 正しい無最適化コンパイラを完全な適合実装とする
+- 最適化を省略または分離可能な追加処理として実装できる
+- SSAを必須にしない
+- ガベージコレクションを要求しない
+- 小さく文書化された補助実行時処理
+- Bitlang VM Assemblyへ直接、または非常に小さな中間表現を経由して低水準化
+
+数値上限は、Go/Rust版コンパイラを実装して現実的な規模を把握してから決めます。
+
+---
+
+# 自分自身をコンパイルできることの確認
+
+「SimlでSimlコンパイラを書いた」だけでは完成としません。
+
+少なくとも次を確認します。
 
 ```text
-reference compiler
-    -> compiles Siml compiler source
-    -> produces self-hosted compiler A
+参照コンパイラ
+    -> Simlで書かれたコンパイラをコンパイル
+    -> コンパイラA
 
-compiler A
-    -> compiles the same Siml compiler source
-    -> produces compiler B
+コンパイラA
+    -> 同じSimlコンパイラのソースをコンパイル
+    -> コンパイラB
 ```
 
-Compiler B must successfully compile representative Siml programs.
+コンパイラBが代表的なSimlプログラムを正常にコンパイルできなければなりません。
 
-Whether A and B must be byte-for-byte reproducible is a separate decision.
+AとBの出力が完全に同一であることを要求するかは別途決めます。
 
 ---
 
-# Recommended decision order
+# 推奨する決定順序
 
-The next design work should proceed roughly in this order:
+今後は、おおむね次の順で進めます。
 
-1. primitive types and integer semantics;
-2. pointer/memory model;
-3. expressions and evaluation order;
-4. variables and aggregates;
-5. control flow;
-6. functions and the minimum calling model;
-7. failure/trap/undefined-behavior policy;
-8. concrete grammar;
-9. Bitlang VM Assembly lowering rules;
-10. module and separate-compilation model;
-11. runtime/ABI boundary;
-12. complexity-budget numbers;
-13. self-hosted compiler design.
+1. 基本型と整数仕様
+2. ポインタとメモリ
+3. 式と評価順序
+4. 変数と集合データ型
+5. 制御構文
+6. 関数と最小呼出モデル
+7. 失敗・異常停止・未定義動作
+8. 具体的な文法
+9. Bitlang VM Assemblyへの低水準化規則
+10. モジュールと分割コンパイル
+11. 実行時機構とABI境界
+12. 複雑さの具体的上限
+13. Siml自身で書くコンパイラの設計
 
-This order tries to make the first executable compiler possible before solving large-project ergonomics.
+最適化設計はこの必須経路に入れません。無最適化コンパイラ、OS用途、Siml自身のコンパイラ実装が成立してから考えます。
+
+最初に実行可能なコンパイラを作る前に、大規模プロジェクト向けの便利さを先回りして解決しないことを重視します。

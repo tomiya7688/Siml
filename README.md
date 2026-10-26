@@ -1,24 +1,40 @@
 # Siml
 
-**Siml (Simple Language)** is a systems programming language focused on making a usable compiler simple to implement on new operating systems, new instruction sets, and experimental architectures.
+**Siml (Simple Language)** は、新しいOS、新しい命令セット、実験的なCPUなどへ持ち込みやすい、**コンパイラ実装の単純さ**を最優先するシステムプログラミング言語です。
 
-The project does **not** primarily aim to beat C in runtime performance or to minimize large-project build times. Its primary design constraint is that a bootstrap compiler must remain simple enough to implement in [Bitlang VM Assembly](https://github.com/tomiya7688/Bitlang-VM), whose low-level profile is based on [Assam Core](https://github.com/tomiya7688/Assam).
+Simlは、Cより高速な実行性能や巨大プロジェクトの最短ビルド時間を主目的にはしません。最重要条件は、実用的な最小Simlコンパイラが、同等のfreestanding / OS用途に使える最小Cコンパイラより単純であり、[Bitlang VM Assembly](https://github.com/tomiya7688/Bitlang-VM) で読める規模の実装として書けることです。Bitlang VM Assembly の低水準仕様は [Assam Core](https://github.com/tomiya7688/Assam) を基礎にしています。
 
-## MVP direction
+Simlだけで、機械に直接触れる低水準部分からカーネル、ドライバ、高水準のユーザー空間まで、OS全体を書けることを目指します。
 
-The initial implementation plan is:
+**正しいコードを生成する無最適化コンパイラは、完全なSimlコンパイラです。** 最適化は任意であり、最小コンパイラからできるだけ分離します。
 
-1. Build a reference compiler in Go or Rust.
-2. Build a minimal bootstrap compiler in Bitlang VM Assembly.
-3. Keep the low-level bootstrap implementation within an explicit complexity budget.
-4. Use that implementation both as a simplicity test and as a readable reference for developers bringing Siml to a new architecture or environment.
-5. Implement the compiler in Siml itself.
-6. Reach self-hosting: the Siml compiler can compile the Siml compiler.
+## 最小実用版までの方針
 
-See:
+1. GoまたはRustで参照コンパイラを作る。
+2. Bitlang VM Assemblyで最小の初期立ち上げ用コンパイラを作る。
+3. 低水準コンパイラに明示的な複雑さの上限を設ける。
+4. その実装を、言語が本当に単純かを確かめる試験と、新しい環境へ移植する開発者向けの読める参照実装の両方に使う。
+5. Siml自身でSimlコンパイラを書く。
+6. SimlコンパイラがSimlコンパイラ自身をコンパイルできる状態にする。
 
-- [Design principles](docs/design-principles.md)
-- [Integer semantics](docs/integer-semantics.md)
-- [Open design decisions](docs/open-decisions.md)
+## 文書
 
-Status: early design.
+- [設計原則](docs/design-principles.md)
+- [整数仕様](docs/integer-semantics.md)
+- [ポインタ仕様](docs/pointer-semantics.md)
+- [未決定事項](docs/open-decisions.md)
+- [英語翻訳](docs/en/README.md)
+
+## 文書の整形
+
+リポジトリのルートでNode.js 24とnpmを使います。初回は `npm ci --ignore-scripts` で、固定されたPrettier 3.6.2を導入します。整形するファイルをコマンドの末尾に指定します。
+
+```sh
+npm run format -- docs/pointer-memory-model.md docs/open-decisions.md docs/en/open-decisions.md
+npm run format:check -- docs/pointer-memory-model.md docs/open-decisions.md docs/en/open-decisions.md
+npm run format:check:ci
+```
+
+`format:check:ci` は、CIで確認する文書とformatter設定の全リストを検査します。対象外の文書を変更する場合は、そのファイルを指定して `format` と `format:check` を実行してください。
+
+状態: 初期設計中
