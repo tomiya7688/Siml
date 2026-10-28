@@ -3,7 +3,7 @@
 # Open Design Decisions
 
 Status: Draft  
-Last updated: 2026-10-21
+Last updated: 2026-10-28
 
 This document lists the decisions that must be made while designing Siml.
 
@@ -87,6 +87,9 @@ The initial pointer arithmetic rules are defined in [Pointer semantics](pointer-
 
 Current decisions include:
 
+- pointer types use `*T`, address-of uses `&x`, and dereference uses `*p`;
+- Siml has no special built-in `null` value;
+- address zero has no special language-level meaning;
 - pointer arithmetic is part of the MVP because it is directly useful for OS work;
 - for `p: *T`, `p + n` and `p - n` use element-scaled offsets;
 - `p1 - p2` for matching pointer types returns the distance in elements as `isize`;
@@ -96,11 +99,8 @@ Current decisions include:
 
 Still decide:
 
-- final pointer type syntax;
-- address-of and dereference syntax;
 - the exact integer type or types accepted as pointer offsets;
 - pointer-difference validity rules;
-- whether a null pointer value is defined;
 - alignment requirements;
 - behavior of misaligned access;
 - load/store widths;
@@ -216,7 +216,7 @@ Important cases include:
 - integer overflow;
 - division by zero;
 - invalid shifts;
-- null dereference;
+- invalid-address dereference;
 - invalid pointer access;
 - out-of-bounds array access;
 - invalid casts;
