@@ -3,7 +3,7 @@
 # Integer Semantics
 
 Status: MVP draft decision  
-Last updated: 2026-10-02
+Last updated: 2026-10-28
 
 This document defines the current integer model for Siml.
 
@@ -39,7 +39,16 @@ u32 == u64 -> compile error
 
 An explicit conversion is required when converting between integer types.
 
-The exact syntax and semantics of explicit casts are specified separately.
+All explicit conversions use the single syntax `expression as type`.
+
+Examples:
+
+```text
+x as u8
+x as u64
+```
+
+The same `as` syntax is used for every explicit conversion that Siml permits, including integer/pointer conversions. The exact allowed conversion pairs and their semantics are specified separately.
 
 ## Integer literals
 
