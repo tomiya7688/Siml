@@ -3,9 +3,29 @@
 # Pointer Semantics
 
 Status: MVP draft decision  
-Last updated: 2026-10-21
+Last updated: 2026-10-28
 
 This document records the current Siml pointer decisions. The pointer and memory model is still incomplete; only the rules already decided are fixed here.
+
+## Basic syntax
+
+Pointer types and basic operations use short, direct syntax because low-level OS code must remain easy to read.
+
+```text
+*T   // pointer to T
+&x   // address of x
+*p   // read from, or write through, p
+```
+
+## No special null value
+
+Siml does not define `null` as a special built-in value.
+
+Address zero also has no special language-level meaning. Whether address zero is usable, reserved by an operating system, or traps on a particular machine is outside the core language semantics.
+
+If a pointer to address zero is needed, it is produced by an explicit integer-to-pointer conversion. The exact conversion syntax is still open.
+
+This avoids adding null-specific lexer rules, AST nodes, typing rules, assignment rules, or dereference checks to the minimum compiler.
 
 ## Pointer arithmetic
 
