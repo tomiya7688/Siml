@@ -26,4 +26,16 @@ See:
 - [Pointer semantics](pointer-semantics.md)
 - [Open design decisions](open-decisions.md)
 
+## Documentation formatting
+
+Run these commands from the repository root with Node.js 24 and npm. First run `npm ci --ignore-scripts` to install the pinned Prettier 3.6.2. Pass the files being changed to the commands:
+
+```sh
+npm run format -- docs/pointer-memory-model.md docs/open-decisions.md docs/en/open-decisions.md
+npm run format:check -- docs/pointer-memory-model.md docs/open-decisions.md docs/en/open-decisions.md
+npm run format:check:ci
+```
+
+`format:check:ci` checks the complete list of documents and formatter configuration used by CI. When changing other documents, pass those files to `format` and `format:check`.
+
 Status: early design.

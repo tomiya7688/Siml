@@ -3,7 +3,7 @@
 # Open Design Decisions
 
 Status: Draft  
-Last updated: 2026-10-21
+Last updated: 2026-10-27
 
 This document lists the decisions that must be made while designing Siml.
 
@@ -84,6 +84,10 @@ Still open:
 This is central for OS development.
 
 The initial pointer arithmetic rules are defined in [Pointer semantics](pointer-semantics.md).
+
+An English [memory model discussion draft](../pointer-memory-model.md) proposes additional rules. It is unaccepted, and the current pointer decisions take precedence.
+
+The draft proposes requiring alignment at access without requiring static proof; how violations are handled remains undecided. It also proposes defining fixed-array indexing by array bounds without changing the accepted pointer arithmetic rules.
 
 Current decisions include:
 

@@ -25,4 +25,16 @@ Simlだけで、機械に直接触れる低水準部分からカーネル、ド�
 - [未決定事項](docs/open-decisions.md)
 - [英語翻訳](docs/en/README.md)
 
+## 文書の整形
+
+リポジトリのルートでNode.js 24とnpmを使います。初回は `npm ci --ignore-scripts` で、固定されたPrettier 3.6.2を導入します。整形するファイルをコマンドの末尾に指定します。
+
+```sh
+npm run format -- docs/pointer-memory-model.md docs/open-decisions.md docs/en/open-decisions.md
+npm run format:check -- docs/pointer-memory-model.md docs/open-decisions.md docs/en/open-decisions.md
+npm run format:check:ci
+```
+
+`format:check:ci` は、CIで確認する文書とformatter設定の全リストを検査します。対象外の文書を変更する場合は、そのファイルを指定して `format` と `format:check` を実行してください。
+
 状態: 初期設計中

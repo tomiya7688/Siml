@@ -1,0 +1,13 @@
+{
+  "name": "siml-docs",
+  "version": "0.0.0",
+  "private": true,
+  "scripts": {
+    "format": "prettier --write",
+    "format:check": "prettier --check",
+    "format:check:ci": "prettier --check AGENTS.md README.md docs/en/README.md docs/open-decisions.md docs/en/open-decisions.md docs/pointer-memory-model.md .github/workflows/ci.yml package.json package-lock.json .prettierrc.json"
+  },
+  "devDependencies": {
+    "prettier": "3.6.2"
+  }
+}
