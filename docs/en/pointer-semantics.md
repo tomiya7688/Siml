@@ -23,7 +23,17 @@ Siml does not define `null` as a special built-in value.
 
 Address zero also has no special language-level meaning. Whether address zero is usable, reserved by an operating system, or traps on a particular machine is outside the core language semantics.
 
-If a pointer to address zero is needed, it is produced by an explicit integer-to-pointer conversion. The exact conversion syntax is still open.
+If a pointer to address zero is needed, it is produced by an explicit integer-to-pointer conversion.
+
+All explicit conversions use `expression as type`, for example:
+
+```text
+0 as *u8
+addr as *u32
+p as usize
+```
+
+No pointer-specific conversion function or special syntax is introduced.
 
 This avoids adding null-specific lexer rules, AST nodes, typing rules, assignment rules, or dereference checks to the minimum compiler.
 
@@ -111,9 +121,14 @@ The exact syntax for taking the address of an array element or array storage is 
 
 Pointer arithmetic does not introduce implicit conversion between pointers and integers.
 
-Pointer-to-integer and integer-to-pointer conversion, if supported, must be explicit.
+Pointer-to-integer and integer-to-pointer conversion must be explicit and use the same `as` syntax as other conversions.
 
-The exact syntax and semantics of those conversions are still open.
+```text
+addr as *u32
+p as usize
+```
+
+The exact allowed conversion pairs and their semantics are still open.
 
 ## Design rationale
 
