@@ -71,11 +71,12 @@ Current decisions include:
 - division and remainder with explicit trap cases;
 - defined signed and unsigned right-shift behavior;
 - invalid dynamic shift counts trap;
-- comparisons require matching types and return `bool`.
+- comparisons require matching types and return `bool`;
+- all explicit conversions use `expression as type`.
 
 Still open:
 
-- exact explicit-cast syntax and conversion semantics;
+- the exact semantics of each conversion and which type pairs are permitted;
 - whether contextual integer literals remain cheap enough in the Bitlang VM Assembly bootstrap compiler;
 - whether dynamic invalid-shift trapping remains within the desired implementation/runtime complexity budget.
 
@@ -95,7 +96,8 @@ Current decisions include:
 - `p1 - p2` for matching pointer types returns the distance in elements as `isize`;
 - `integer + pointer`, `pointer + pointer`, multiplication, division, and other pointer arithmetic forms are rejected;
 - arrays do not implicitly decay to pointers;
-- pointers and integers do not implicitly convert.
+- pointers and integers do not implicitly convert;
+- explicit integer-to-pointer and pointer-to-integer conversions use the same `expression as type` syntax as all other explicit conversions.
 
 Still decide:
 
@@ -106,7 +108,7 @@ Still decide:
 - load/store widths;
 - aliasing rules;
 - representation of addresses;
-- explicit casts between integers and pointers;
+- the exact allowed integer/pointer conversions and their semantics;
 - support for memory-mapped I/O;
 - whether a `volatile`-like concept is required.
 
@@ -192,14 +194,25 @@ For OS work, memory layout must be predictable.
 
 ## 10. Casts and conversions
 
-Decide exactly which conversions are:
+All explicit conversions use the single syntax `expression as type`.
 
-- automatic;
-- explicit but safe;
-- explicit and low-level;
-- forbidden.
+Examples:
 
-A small conversion table is preferable to a large set of contextual promotion rules.
+```text
+x as u8
+addr as *u32
+p as usize
+```
+
+Still open:
+
+- which type pairs are accepted by `as`;
+- exact widening and narrowing integer semantics;
+- signed/unsigned integer conversion rules;
+- integer/pointer conversion rules;
+- which conversions are forbidden.
+
+Prefer a small conversion table and one `as` syntax over contextual promotion rules or separate syntax for each conversion kind.
 
 ## 11. Failure, trap, and undefined behavior policy
 
